@@ -11,6 +11,7 @@
 
 version: "3.9"
 volumes:
+  mysql-data:
   ingestion-volume-dag-airflow:
   ingestion-volume-dags:
   ingestion-volume-tmp:
@@ -18,7 +19,7 @@ volumes:
 services:
   mysql:
     container_name: openmetadata_mysql
-    image: docker.getcollate.io/openmetadata/db:1.12.5
+    image: docker.getcollate.io/openmetadata/db:1.10.1
     command: "--sort_buffer_size=10M"
     restart: always
     environment:
@@ -28,7 +29,8 @@ services:
     ports:
       - "3306:3306"
     volumes:
-     - ./docker-volume/db-data:/var/lib/mysql
+     - mysql-data:/var/lib/mysql
+     
     networks:
       - app_net
     healthcheck:

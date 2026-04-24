@@ -1,22 +1,390 @@
-import { useEffect, useState } from "react";
+// import { useEffect, useState } from "react";
+// import { useAuth } from "../context/AuthContext";
+// import { useNavigate } from "react-router-dom";
+// import axios from "axios";
+// import {
+//   BarChart, Bar, PieChart, Pie, Cell,
+//   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+// } from "recharts";
+
+// const COLORS = {
+//   high: "#ef4444",
+//   medium: "#f59e0b",
+//   low: "#10b981",
+//   purple: "#8b5cf6",
+//   blue: "#3b82f6",
+//   bg: "#1e293b",
+//   border: "#334155",
+//   text: "#94a3b8",
+// };
+
+// export default function Dashboard() {
+//   const { token, email } = useAuth();
+//   const navigate = useNavigate();
+//   const [stats, setStats] = useState<any>(null);
+//   const [findings, setFindings] = useState<any[]>([]);
+//   const [certs, setCerts] = useState<any[]>([]);
+//   const [loading, setLoading] = useState(true);
+//   const [error, setError] = useState<string | null>(null);
+
+//   useEffect(() => {
+//     const headers = { Authorization: `Bearer ${token}` };
+//     Promise.all([
+//       axios.get("/api/stats", { headers }),
+//       axios.get("/api/findings", { headers }),
+//       axios.get("/api/certifications", { headers }),
+//     ]).then(([s, f, c]) => {
+//       setStats(s.data);
+//       setFindings(Array.isArray(f.data) ? f.data : []);
+//       setCerts(Array.isArray(c.data) ? c.data : []);
+//     }).catch(err => {
+//       setError(err.message);
+//     }).finally(() => setLoading(false));
+//   }, [token]);
+
+//   const high = findings.filter(f => f.severity === "HIGH").length;
+//   const medium = findings.filter(f => f.severity === "MEDIUM").length;
+//   const low = findings.filter(f => f.severity === "LOW").length;
+
+//   const pieData = [
+//     { name: "High", value: high, color: COLORS.high },
+//     { name: "Medium", value: medium, color: COLORS.medium },
+//     { name: "Low", value: low, color: COLORS.low },
+//   ].filter(d => d.value > 0);
+
+//   const barData = stats ? [
+//     { name: "Policies", value: stats.policies ?? 0, fill: COLORS.purple },
+//     { name: "Roles", value: stats.roles ?? 0, fill: COLORS.blue },
+//     { name: "Glossaries", value: stats.glossaries ?? 0, fill: COLORS.low },
+//     { name: "Users", value: stats.users ?? 0, fill: COLORS.medium },
+//     { name: "Teams", value: stats.teams ?? 0, fill: COLORS.high },
+//   ] : [];
+
+//   const certStatusData = [
+//     { name: "Active", value: certs.filter(c => c.status === "ACTIVE").length, color: COLORS.low },
+//     { name: "Expiring", value: certs.filter(c => c.status === "EXPIRING_SOON").length, color: COLORS.medium },
+//     { name: "Expired", value: certs.filter(c => c.status === "EXPIRED").length, color: COLORS.high },
+//     { name: "Uncertified", value: certs.filter(c => c.status === "UNCERTIFIED").length, color: COLORS.text },
+//   ];
+
+//   const typeData = findings.reduce((acc: any[], f) => {
+//     const existing = acc.find(a => a.type === f.type);
+//     if (existing) existing.count++;
+//     else acc.push({ type: f.type.replace(/_/g, " "), count: 1 });
+//     return acc;
+//   }, []);
+
+//   if (loading) return (
+//     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
+//       <div style={{ textAlign: "center" }}>
+//         <div style={{ fontSize: "32px", marginBottom: "16px" }}>🛡️</div>
+//         <div style={{ color: COLORS.text }}>Loading governance data...</div>
+//       </div>
+//     </div>
+//   );
+
+//   if (error) return (
+//     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
+//       <div style={{ textAlign: "center" }}>
+//         <div style={{ fontSize: "32px", marginBottom: "16px" }}>❌</div>
+//         <div style={{ color: COLORS.high }}>Failed to load: {error}</div>
+//         <div style={{ color: COLORS.text, marginTop: "8px", fontSize: "13px" }}>
+//           Make sure OpenMetadata is running at localhost:8585
+//         </div>
+//       </div>
+//     </div>
+//   );
+
+//   return (
+//     <div style={{ maxWidth: "1200px" }}>
+//       {/* Header */}
+//       <div style={{ marginBottom: "32px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+//         <div>
+//           <h1 style={{ fontSize: "28px", fontWeight: "700", color: "#f1f5f9", letterSpacing: "-0.5px" }}>
+//             Governance Overview
+//           </h1>
+//           <p style={{ color: COLORS.text, marginTop: "4px", fontSize: "14px" }}>
+//             Welcome back, {email} · {new Date().toLocaleDateString("en-AU", {
+//               weekday: "long", year: "numeric", month: "long", day: "numeric"
+//             })}
+//           </p>
+//         </div>
+//         <div style={{ display: "flex", gap: "8px" }}>
+//           {[
+//             { label: "🔍 Audit", path: "/audit" },
+//             { label: "🤝 Delegate", path: "/delegate" },
+//           ].map(a => (
+//             <button key={a.path} onClick={() => navigate(a.path)} style={{
+//               padding: "8px 16px",
+//               background: "linear-gradient(135deg, #667eea, #764ba2)",
+//               border: "none", borderRadius: "8px",
+//               color: "white", cursor: "pointer", fontSize: "13px", fontWeight: "600"
+//             }}>{a.label}</button>
+//           ))}
+//         </div>
+//       </div>
+
+//       {/* Stat cards */}
+//       <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "12px", marginBottom: "24px" }}>
+//         {[
+//           { label: "Policies", value: stats?.policies ?? 0, icon: "📋", color: COLORS.purple },
+//           { label: "Roles", value: stats?.roles ?? 0, icon: "🎭", color: COLORS.blue },
+//           { label: "Glossaries", value: stats?.glossaries ?? 0, icon: "📚", color: COLORS.low },
+//           { label: "Users", value: stats?.users ?? 0, icon: "👥", color: COLORS.medium },
+//           { label: "Teams", value: stats?.teams ?? 0, icon: "👨‍👩‍👧", color: COLORS.high },
+//         ].map(card => (
+//           <div key={card.label} style={{
+//             background: COLORS.bg,
+//             border: `1px solid ${COLORS.border}`,
+//             borderRadius: "12px",
+//             padding: "20px",
+//             borderTop: `3px solid ${card.color}`,
+//           }}>
+//             <div style={{ fontSize: "20px", marginBottom: "8px" }}>{card.icon}</div>
+//             <div style={{ fontSize: "28px", fontWeight: "700", color: card.color }}>{card.value}</div>
+//             <div style={{ fontSize: "12px", color: COLORS.text, marginTop: "2px" }}>{card.label}</div>
+//           </div>
+//         ))}
+//       </div>
+
+//       {/* Middle row */}
+//       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "24px" }}>
+
+//         {/* Findings pie */}
+//         <div style={{ background: COLORS.bg, border: `1px solid ${COLORS.border}`, borderRadius: "12px", padding: "24px" }}>
+//           <h2 style={{ fontSize: "15px", fontWeight: "600", color: "#f1f5f9", marginBottom: "20px" }}>
+//             🔍 Findings by Severity
+//           </h2>
+//           {pieData.length === 0 ? (
+//             <div style={{ textAlign: "center", padding: "40px", color: COLORS.low }}>
+//               <div style={{ fontSize: "32px" }}>✅</div>
+//               <div style={{ marginTop: "8px", fontSize: "14px" }}>No findings! Governance looks healthy.</div>
+//             </div>
+//           ) : (
+//             <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+//               <ResponsiveContainer width={160} height={160}>
+//                 <PieChart>
+//                   <Pie data={pieData} cx="50%" cy="50%" innerRadius={40} outerRadius={70} dataKey="value" paddingAngle={3}>
+//                     {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+//                   </Pie>
+//                 </PieChart>
+//               </ResponsiveContainer>
+//               <div style={{ flex: 1 }}>
+//                 {[
+//                   { label: "High", value: high, color: COLORS.high },
+//                   { label: "Medium", value: medium, color: COLORS.medium },
+//                   { label: "Low", value: low, color: COLORS.low },
+//                 ].map(item => (
+//                   <div key={item.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+//                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+//                       <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: item.color }} />
+//                       <span style={{ fontSize: "13px", color: COLORS.text }}>{item.label}</span>
+//                     </div>
+//                     <span style={{ fontSize: "20px", fontWeight: "700", color: item.color }}>{item.value}</span>
+//                   </div>
+//                 ))}
+//                 <button onClick={() => navigate("/audit")} style={{
+//                   width: "100%", marginTop: "8px", padding: "8px",
+//                   background: "transparent", border: `1px solid ${COLORS.border}`,
+//                   borderRadius: "6px", color: COLORS.text, cursor: "pointer", fontSize: "12px"
+//                 }}>View All Findings →</button>
+//               </div>
+//             </div>
+//           )}
+//         </div>
+
+//         {/* Cert status */}
+//         <div style={{ background: COLORS.bg, border: `1px solid ${COLORS.border}`, borderRadius: "12px", padding: "24px" }}>
+//           <h2 style={{ fontSize: "15px", fontWeight: "600", color: "#f1f5f9", marginBottom: "20px" }}>
+//             🏅 Certification Status
+//           </h2>
+//           <ResponsiveContainer width="100%" height={160}>
+//             <BarChart data={certStatusData} barSize={32}>
+//               <CartesianGrid strokeDasharray="3 3" stroke={COLORS.border} vertical={false} />
+//               <XAxis dataKey="name" tick={{ fill: COLORS.text, fontSize: 12 }} axisLine={false} tickLine={false} />
+//               <YAxis tick={{ fill: COLORS.text, fontSize: 12 }} axisLine={false} tickLine={false} />
+//               <Tooltip contentStyle={{ background: "#0f172a", border: `1px solid ${COLORS.border}`, borderRadius: "8px", color: "#f1f5f9" }} />
+//               <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+//                 {certStatusData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+//               </Bar>
+//             </BarChart>
+//           </ResponsiveContainer>
+//           <button onClick={() => navigate("/certify")} style={{
+//             width: "100%", marginTop: "12px", padding: "8px",
+//             background: "transparent", border: `1px solid ${COLORS.border}`,
+//             borderRadius: "6px", color: COLORS.text, cursor: "pointer", fontSize: "12px"
+//           }}>Manage Certifications →</button>
+//         </div>
+//       </div>
+
+//       {/* Bottom row */}
+//       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+
+//         {/* Asset breakdown */}
+//         <div style={{ background: COLORS.bg, border: `1px solid ${COLORS.border}`, borderRadius: "12px", padding: "24px" }}>
+//           <h2 style={{ fontSize: "15px", fontWeight: "600", color: "#f1f5f9", marginBottom: "20px" }}>
+//             📊 Asset Breakdown
+//           </h2>
+//           <ResponsiveContainer width="100%" height={180}>
+//             <BarChart data={barData} layout="vertical" barSize={16}>
+//               <CartesianGrid strokeDasharray="3 3" stroke={COLORS.border} horizontal={false} />
+//               <XAxis type="number" tick={{ fill: COLORS.text, fontSize: 12 }} axisLine={false} tickLine={false} />
+//               <YAxis type="category" dataKey="name" tick={{ fill: COLORS.text, fontSize: 12 }} axisLine={false} tickLine={false} width={70} />
+//               <Tooltip contentStyle={{ background: "#0f172a", border: `1px solid ${COLORS.border}`, borderRadius: "8px", color: "#f1f5f9" }} />
+//               <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+//                 {barData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+//               </Bar>
+//             </BarChart>
+//           </ResponsiveContainer>
+//         </div>
+
+//         {/* Finding types */}
+//         <div style={{ background: COLORS.bg, border: `1px solid ${COLORS.border}`, borderRadius: "12px", padding: "24px" }}>
+//           <h2 style={{ fontSize: "15px", fontWeight: "600", color: "#f1f5f9", marginBottom: "20px" }}>
+//             ⚠️ Finding Types
+//           </h2>
+//           {typeData.length === 0 ? (
+//             <div style={{ textAlign: "center", padding: "40px", color: COLORS.low }}>
+//               <div style={{ fontSize: "32px" }}>✅</div>
+//               <div style={{ marginTop: "8px", fontSize: "14px" }}>No issues detected!</div>
+//             </div>
+//           ) : (
+//             <div>
+//               {typeData.map((t, i) => (
+//                 <div key={i} style={{
+//                   display: "flex", justifyContent: "space-between", alignItems: "center",
+//                   padding: "10px 0",
+//                   borderBottom: i < typeData.length - 1 ? `1px solid ${COLORS.border}` : "none"
+//                 }}>
+//                   <span style={{ fontSize: "13px", color: COLORS.text, textTransform: "capitalize" }}>
+//                     {t.type.toLowerCase()}
+//                   </span>
+//                   <span style={{
+//                     padding: "2px 10px", borderRadius: "20px",
+//                     background: "rgba(239,68,68,0.1)", color: COLORS.high,
+//                     fontSize: "12px", fontWeight: "700"
+//                   }}>{t.count}</span>
+//                 </div>
+//               ))}
+//             </div>
+//           )}
+//           <div style={{ marginTop: "16px", display: "flex", gap: "8px" }}>
+//             {[
+//               { label: "🔐 Pre-Delegate", path: "/pre-delegate" },
+//               { label: "🤝 Delegate", path: "/delegate" },
+//             ].map(a => (
+//               <button key={a.path} onClick={() => navigate(a.path)} style={{
+//                 flex: 1, padding: "8px",
+//                 background: "linear-gradient(135deg, #667eea, #764ba2)",
+//                 border: "none", borderRadius: "6px",
+//                 color: "white", cursor: "pointer", fontSize: "12px", fontWeight: "600"
+//               }}>{a.label}</button>
+//             ))}
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
+
+
+
+
+
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
-  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+  BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 
-const COLORS = {
+const C = {
   high: "#ef4444",
-  medium: "#f59e0b", 
+  medium: "#f59e0b",
   low: "#10b981",
   purple: "#8b5cf6",
   blue: "#3b82f6",
-  bg: "#1e293b",
+  bg: "#0f172a",
+  card: "#1e293b",
   border: "#334155",
   text: "#94a3b8",
+  bright: "#f1f5f9",
 };
+
+function AnimatedNumber({ target }: { target: number }) {
+  const [current, setCurrent] = useState(0);
+  useEffect(() => {
+    if (target === 0) return;
+    let start = 0;
+    const step = Math.ceil(target / 30);
+    const timer = setInterval(() => {
+      start += step;
+      if (start >= target) {
+        setCurrent(target);
+        clearInterval(timer);
+      } else {
+        setCurrent(start);
+      }
+    }, 30);
+    return () => clearInterval(timer);
+  }, [target]);
+  return <>{current}</>;
+}
+
+function RiskGauge({ score, risk }: { score: number; risk: string }) {
+  const color = risk === "LOW" ? C.low : risk === "MODERATE" ? C.medium : C.high;
+  const [animated, setAnimated] = useState(0);
+
+  useEffect(() => {
+    let s = 0;
+    const timer = setInterval(() => {
+      s += 2;
+      if (s >= score) { setAnimated(score); clearInterval(timer); }
+      else setAnimated(s);
+    }, 20);
+    return () => clearInterval(timer);
+  }, [score]);
+
+  const pct = animated / 100;
+  const radius = 60;
+  const circumference = Math.PI * radius;
+  const strokeDash = circumference * pct;
+
+  return (
+    <div style={{ textAlign: "center" }}>
+      <svg width="160" height="90" viewBox="0 0 160 90">
+        <path
+          d="M 20 80 A 60 60 0 0 1 140 80"
+          fill="none" stroke="#1e293b" strokeWidth="12" strokeLinecap="round"
+        />
+        <path
+          d="M 20 80 A 60 60 0 0 1 140 80"
+          fill="none" stroke={color} strokeWidth="12" strokeLinecap="round"
+          strokeDasharray={`${strokeDash} ${circumference}`}
+          style={{ transition: "stroke-dasharray 0.1s ease" }}
+        />
+        <text x="80" y="72" textAnchor="middle" fill={color} fontSize="24" fontWeight="700">
+          {animated}
+        </text>
+        <text x="80" y="86" textAnchor="middle" fill={C.text} fontSize="10">
+          / 100
+        </text>
+      </svg>
+      <div style={{
+        display: "inline-block",
+        padding: "4px 16px", borderRadius: "20px",
+        background: `${color}22`, color,
+        fontSize: "12px", fontWeight: "700", marginTop: "4px",
+        border: `1px solid ${color}44`,
+      }}>
+        {risk} RISK
+      </div>
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const { token, email } = useAuth();
@@ -24,7 +392,9 @@ export default function Dashboard() {
   const [stats, setStats] = useState<any>(null);
   const [findings, setFindings] = useState<any[]>([]);
   const [certs, setCerts] = useState<any[]>([]);
+  const [score, setScore] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const headers = { Authorization: `Bearer ${token}` };
@@ -32,42 +402,48 @@ export default function Dashboard() {
       axios.get("/api/stats", { headers }),
       axios.get("/api/findings", { headers }),
       axios.get("/api/certifications", { headers }),
-    ]).then(([s, f, c]) => {
+      axios.get("/api/score", { headers }),
+    ]).then(([s, f, c, sc]) => {
       setStats(s.data);
-      setFindings(f.data);
-      setCerts(c.data);
-    }).finally(() => setLoading(false));
+      setFindings(Array.isArray(f.data) ? f.data : []);
+      setCerts(Array.isArray(c.data) ? c.data : []);
+      setScore(sc.data);
+    }).catch(err => setError(err.message))
+      .finally(() => setLoading(false));
   }, [token]);
 
   const high = findings.filter(f => f.severity === "HIGH").length;
   const medium = findings.filter(f => f.severity === "MEDIUM").length;
   const low = findings.filter(f => f.severity === "LOW").length;
 
-  // Pie chart data
   const pieData = [
-    { name: "High", value: high, color: COLORS.high },
-    { name: "Medium", value: medium, color: COLORS.medium },
-    { name: "Low", value: low, color: COLORS.low },
+    { name: "High", value: high, color: C.high },
+    { name: "Medium", value: medium, color: C.medium },
+    { name: "Low", value: low, color: C.low },
   ].filter(d => d.value > 0);
 
-  // Bar chart data for stats
   const barData = stats ? [
-    { name: "Policies", value: stats.policies, fill: COLORS.purple },
-    { name: "Roles", value: stats.roles, fill: COLORS.blue },
-    { name: "Glossaries", value: stats.glossaries, fill: COLORS.low },
-    { name: "Users", value: stats.users, fill: COLORS.medium },
-    { name: "Teams", value: stats.teams, fill: COLORS.high },
+    { name: "Policies", value: stats.policies ?? 0, fill: C.purple },
+    { name: "Roles", value: stats.roles ?? 0, fill: C.blue },
+    { name: "Glossaries", value: stats.glossaries ?? 0, fill: C.low },
+    { name: "Users", value: stats.users ?? 0, fill: C.medium },
+    { name: "Teams", value: stats.teams ?? 0, fill: C.high },
   ] : [];
 
-  // Cert status data
   const certStatusData = [
-    { name: "Active", value: certs.filter(c => c.status === "ACTIVE").length, color: COLORS.low },
-    { name: "Expiring", value: certs.filter(c => c.status === "EXPIRING_SOON").length, color: COLORS.medium },
-    { name: "Expired", value: certs.filter(c => c.status === "EXPIRED").length, color: COLORS.high },
-    { name: "Uncertified", value: certs.filter(c => c.status === "UNCERTIFIED").length, color: COLORS.text },
+    { name: "Active", value: certs.filter(c => c.status === "ACTIVE").length, color: C.low },
+    { name: "Expiring", value: certs.filter(c => c.status === "EXPIRING_SOON").length, color: C.medium },
+    { name: "Expired", value: certs.filter(c => c.status === "EXPIRED").length, color: C.high },
+    { name: "Uncertified", value: certs.filter(c => c.status === "UNCERTIFIED").length, color: C.text },
   ];
 
-  // Finding types breakdown
+  const scoreBreakdown = score ? [
+    { name: "Policy Coverage", value: score.breakdown.policyCoverage, max: 25, color: C.purple },
+    { name: "Ownership Health", value: score.breakdown.ownershipHealth, max: 25, color: C.blue },
+    { name: "Team Structure", value: score.breakdown.teamStructure, max: 25, color: C.low },
+    { name: "Certification Rate", value: score.breakdown.certificationRate, max: 25, color: C.medium },
+  ] : [];
+
   const typeData = findings.reduce((acc: any[], f) => {
     const existing = acc.find(a => a.type === f.type);
     if (existing) existing.count++;
@@ -78,8 +454,26 @@ export default function Dashboard() {
   if (loading) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
       <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: "32px", marginBottom: "16px" }}>🛡️</div>
-        <div style={{ color: COLORS.text }}>Loading governance data...</div>
+        <div style={{ fontSize: "48px", marginBottom: "16px" }}>🛡️</div>
+        <div style={{ color: C.text, fontSize: "14px" }}>Loading governance data...</div>
+      </div>
+    </div>
+  );
+
+  if (error) return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontSize: "48px", marginBottom: "16px" }}>❌</div>
+        <div style={{ color: C.high, fontSize: "16px", marginBottom: "8px" }}>Failed to load: {error}</div>
+        <div style={{ color: C.text, fontSize: "13px", marginBottom: "24px" }}>
+          Make sure OpenMetadata is running at localhost:8585
+        </div>
+        <button onClick={() => window.location.reload()} style={{
+          padding: "10px 24px",
+          background: "linear-gradient(135deg, #667eea, #764ba2)",
+          border: "none", borderRadius: "8px",
+          color: "white", cursor: "pointer", fontSize: "14px"
+        }}>🔄 Retry</button>
       </div>
     </div>
   );
@@ -87,99 +481,150 @@ export default function Dashboard() {
   return (
     <div style={{ maxWidth: "1200px" }}>
       {/* Header */}
-      <div style={{ marginBottom: "32px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      <div style={{ marginBottom: "28px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
-          <h1 style={{ fontSize: "28px", fontWeight: "700", color: "#f1f5f9", letterSpacing: "-0.5px" }}>
+          <h1 style={{ fontSize: "26px", fontWeight: "700", color: C.bright, letterSpacing: "-0.5px" }}>
             Governance Overview
           </h1>
-          <p style={{ color: COLORS.text, marginTop: "4px", fontSize: "14px" }}>
-            Welcome back, {email} · {new Date().toLocaleDateString("en-AU", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+          <p style={{ color: C.text, marginTop: "4px", fontSize: "13px" }}>
+            {email} · {new Date().toLocaleDateString("en-AU", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
           </p>
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
           {[
             { label: "🔍 Audit", path: "/audit" },
             { label: "🤝 Delegate", path: "/delegate" },
+            { label: "🏅 Certify", path: "/certify" },
           ].map(a => (
             <button key={a.path} onClick={() => navigate(a.path)} style={{
-              padding: "8px 16px",
+              padding: "8px 14px",
               background: "linear-gradient(135deg, #667eea, #764ba2)",
               border: "none", borderRadius: "8px",
-              color: "white", cursor: "pointer", fontSize: "13px", fontWeight: "600"
+              color: "white", cursor: "pointer", fontSize: "12px", fontWeight: "600"
             }}>{a.label}</button>
           ))}
         </div>
       </div>
 
-      {/* Top stat cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "12px", marginBottom: "24px" }}>
-        {[
-          { label: "Policies", value: stats?.policies, icon: "📋", color: COLORS.purple },
-          { label: "Roles", value: stats?.roles, icon: "🎭", color: COLORS.blue },
-          { label: "Glossaries", value: stats?.glossaries, icon: "📚", color: COLORS.low },
-          { label: "Users", value: stats?.users, icon: "👥", color: COLORS.medium },
-          { label: "Teams", value: stats?.teams, icon: "👨‍👩‍👧", color: COLORS.high },
-        ].map(card => (
-          <div key={card.label} style={{
-            background: COLORS.bg,
-            border: `1px solid ${COLORS.border}`,
-            borderRadius: "12px",
-            padding: "20px",
-            borderTop: `3px solid ${card.color}`,
-          }}>
-            <div style={{ fontSize: "20px", marginBottom: "8px" }}>{card.icon}</div>
-            <div style={{ fontSize: "28px", fontWeight: "700", color: card.color }}>{card.value ?? 0}</div>
-            <div style={{ fontSize: "12px", color: COLORS.text, marginTop: "2px" }}>{card.label}</div>
+      {/* Top row — Risk Score + Stat Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: "16px", marginBottom: "20px" }}>
+
+        {/* Risk Score Card */}
+        <div style={{
+          background: C.card,
+          border: `1px solid ${score?.risk === "LOW" ? C.low : score?.risk === "MODERATE" ? C.medium : C.high}44`,
+          borderRadius: "16px", padding: "24px",
+          boxShadow: `0 0 20px ${score?.risk === "LOW" ? C.low : score?.risk === "MODERATE" ? C.medium : C.high}11`,
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        }}>
+          <div style={{ fontSize: "13px", color: C.text, marginBottom: "12px", fontWeight: "600", letterSpacing: "1px" }}>
+            GOVERNANCE SCORE
           </div>
-        ))}
+          {score && <RiskGauge score={score.total} risk={score.risk} />}
+          <div style={{ marginTop: "16px", width: "100%" }}>
+            {scoreBreakdown.map(item => (
+              <div key={item.name} style={{ marginBottom: "8px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                  <span style={{ fontSize: "11px", color: C.text }}>{item.name}</span>
+                  <span style={{ fontSize: "11px", color: item.color, fontWeight: "600" }}>{item.value}/{item.max}</span>
+                </div>
+                <div style={{ height: "4px", background: "#0f172a", borderRadius: "2px" }}>
+                  <div style={{
+                    height: "100%", borderRadius: "2px",
+                    width: `${(item.value / item.max) * 100}%`,
+                    background: item.color,
+                    transition: "width 1s ease",
+                  }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Stat Cards Grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
+          {[
+            { label: "Policies", value: stats?.policies ?? 0, icon: "📋", color: C.purple, sub: "governance rules" },
+            { label: "Roles", value: stats?.roles ?? 0, icon: "🎭", color: C.blue, sub: "access roles" },
+            { label: "Glossaries", value: stats?.glossaries ?? 0, icon: "📚", color: C.low, sub: "data glossaries" },
+            { label: "Users", value: stats?.users ?? 0, icon: "👥", color: C.medium, sub: "active users" },
+            { label: "Teams", value: stats?.teams ?? 0, icon: "👨‍👩‍👧", color: C.high, sub: "team groups" },
+            {
+              label: "Issues",
+              value: high + medium + low,
+              icon: high > 0 ? "🔴" : "✅",
+              color: high > 0 ? C.high : C.low,
+              sub: `${high} critical`
+            },
+          ].map(card => (
+            <div key={card.label} style={{
+              background: C.card,
+              border: `1px solid ${C.border}`,
+              borderRadius: "12px",
+              padding: "16px 20px",
+              borderLeft: `3px solid ${card.color}`,
+              cursor: "pointer",
+              transition: "border-color 0.2s",
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div>
+                  <div style={{ fontSize: "24px", fontWeight: "700", color: card.color, fontFamily: "monospace" }}>
+                    <AnimatedNumber target={card.value} />
+                  </div>
+                  <div style={{ fontSize: "13px", color: C.bright, marginTop: "2px", fontWeight: "600" }}>{card.label}</div>
+                  <div style={{ fontSize: "11px", color: C.text, marginTop: "2px" }}>{card.sub}</div>
+                </div>
+                <div style={{ fontSize: "24px" }}>{card.icon}</div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Middle row — Finding severity + Cert status */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "24px" }}>
+      {/* Middle row */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "20px" }}>
 
-        {/* Findings severity pie */}
-        <div style={{
-          background: COLORS.bg, border: `1px solid ${COLORS.border}`,
-          borderRadius: "12px", padding: "24px"
-        }}>
-          <h2 style={{ fontSize: "15px", fontWeight: "600", color: "#f1f5f9", marginBottom: "20px" }}>
-            🔍 Findings by Severity
+        {/* Findings pie */}
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: "12px", padding: "24px" }}>
+          <h2 style={{ fontSize: "14px", fontWeight: "600", color: C.bright, marginBottom: "20px", letterSpacing: "0.5px" }}>
+            🔍 FINDINGS BY SEVERITY
           </h2>
           {pieData.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "40px", color: COLORS.low }}>
-              <div style={{ fontSize: "32px" }}>✅</div>
-              <div style={{ marginTop: "8px", fontSize: "14px" }}>No findings! Governance looks healthy.</div>
+            <div style={{ textAlign: "center", padding: "32px", color: C.low }}>
+              <div style={{ fontSize: "40px" }}>✅</div>
+              <div style={{ marginTop: "8px", fontSize: "14px" }}>No findings! Governance is healthy.</div>
             </div>
           ) : (
             <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
-              <ResponsiveContainer width={160} height={160}>
+              <ResponsiveContainer width={150} height={150}>
                 <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={40} outerRadius={70} dataKey="value" paddingAngle={3}>
-                    {pieData.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
-                    ))}
+                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={38} outerRadius={65} dataKey="value" paddingAngle={4}>
+                    {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
               <div style={{ flex: 1 }}>
                 {[
-                  { label: "High", value: high, color: COLORS.high },
-                  { label: "Medium", value: medium, color: COLORS.medium },
-                  { label: "Low", value: low, color: COLORS.low },
+                  { label: "Critical", value: high, color: C.high },
+                  { label: "Medium", value: medium, color: C.medium },
+                  { label: "Low", value: low, color: C.low },
                 ].map(item => (
-                  <div key={item.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: item.color }} />
-                      <span style={{ fontSize: "13px", color: COLORS.text }}>{item.label}</span>
-                    </div>
-                    <span style={{ fontSize: "20px", fontWeight: "700", color: item.color }}>{item.value}</span>
+                  <div key={item.label} style={{
+                    display: "flex", justifyContent: "space-between",
+                    alignItems: "center", marginBottom: "10px",
+                    padding: "8px 12px", borderRadius: "8px",
+                    background: `${item.color}11`,
+                    border: `1px solid ${item.color}22`,
+                  }}>
+                    <span style={{ fontSize: "12px", color: C.text }}>{item.label}</span>
+                    <span style={{ fontSize: "18px", fontWeight: "700", color: item.color, fontFamily: "monospace" }}>{item.value}</span>
                   </div>
                 ))}
                 <button onClick={() => navigate("/audit")} style={{
-                  width: "100%", marginTop: "8px",
-                  padding: "8px", background: "transparent",
-                  border: `1px solid ${COLORS.border}`, borderRadius: "6px",
-                  color: COLORS.text, cursor: "pointer", fontSize: "12px"
+                  width: "100%", marginTop: "4px", padding: "8px",
+                  background: "linear-gradient(135deg, #667eea22, #764ba222)",
+                  border: `1px solid #667eea44`, borderRadius: "6px",
+                  color: "#a78bfa", cursor: "pointer", fontSize: "12px", fontWeight: "600"
                 }}>View All Findings →</button>
               </div>
             </div>
@@ -187,110 +632,92 @@ export default function Dashboard() {
         </div>
 
         {/* Cert status */}
-        <div style={{
-          background: COLORS.bg, border: `1px solid ${COLORS.border}`,
-          borderRadius: "12px", padding: "24px"
-        }}>
-          <h2 style={{ fontSize: "15px", fontWeight: "600", color: "#f1f5f9", marginBottom: "20px" }}>
-            🏅 Certification Status
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: "12px", padding: "24px" }}>
+          <h2 style={{ fontSize: "14px", fontWeight: "600", color: C.bright, marginBottom: "20px", letterSpacing: "0.5px" }}>
+            🏅 CERTIFICATION STATUS
           </h2>
-          <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={certStatusData} barSize={32}>
-              <CartesianGrid strokeDasharray="3 3" stroke={COLORS.border} vertical={false} />
-              <XAxis dataKey="name" tick={{ fill: COLORS.text, fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: COLORS.text, fontSize: 12 }} axisLine={false} tickLine={false} />
-              <Tooltip
-                contentStyle={{ background: "#0f172a", border: `1px solid ${COLORS.border}`, borderRadius: "8px", color: "#f1f5f9" }}
-              />
+          <ResponsiveContainer width="100%" height={150}>
+            <BarChart data={certStatusData} barSize={28}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+              <XAxis dataKey="name" tick={{ fill: C.text, fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: C.text, fontSize: 11 }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={{ background: "#0f172a", border: `1px solid ${C.border}`, borderRadius: "8px", color: C.bright, fontSize: "12px" }} />
               <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                {certStatusData.map((entry, i) => (
-                  <Cell key={i} fill={entry.color} />
-                ))}
+                {certStatusData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
           <button onClick={() => navigate("/certify")} style={{
-            width: "100%", marginTop: "12px",
-            padding: "8px", background: "transparent",
-            border: `1px solid ${COLORS.border}`, borderRadius: "6px",
-            color: COLORS.text, cursor: "pointer", fontSize: "12px"
+            width: "100%", marginTop: "12px", padding: "8px",
+            background: "linear-gradient(135deg, #667eea22, #764ba222)",
+            border: `1px solid #667eea44`, borderRadius: "6px",
+            color: "#a78bfa", cursor: "pointer", fontSize: "12px", fontWeight: "600"
           }}>Manage Certifications →</button>
         </div>
       </div>
 
-      {/* Bottom row — Asset breakdown + Finding types */}
+      {/* Bottom row */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
 
-        {/* Asset breakdown bar */}
-        <div style={{
-          background: COLORS.bg, border: `1px solid ${COLORS.border}`,
-          borderRadius: "12px", padding: "24px"
-        }}>
-          <h2 style={{ fontSize: "15px", fontWeight: "600", color: "#f1f5f9", marginBottom: "20px" }}>
-            📊 Asset Breakdown
+        {/* Asset breakdown */}
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: "12px", padding: "24px" }}>
+          <h2 style={{ fontSize: "14px", fontWeight: "600", color: C.bright, marginBottom: "20px", letterSpacing: "0.5px" }}>
+            📊 ASSET BREAKDOWN
           </h2>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={barData} layout="vertical" barSize={16}>
-              <CartesianGrid strokeDasharray="3 3" stroke={COLORS.border} horizontal={false} />
-              <XAxis type="number" tick={{ fill: COLORS.text, fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis type="category" dataKey="name" tick={{ fill: COLORS.text, fontSize: 12 }} axisLine={false} tickLine={false} width={70} />
-              <Tooltip
-                contentStyle={{ background: "#0f172a", border: `1px solid ${COLORS.border}`, borderRadius: "8px", color: "#f1f5f9" }}
-              />
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={barData} layout="vertical" barSize={14}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" horizontal={false} />
+              <XAxis type="number" tick={{ fill: C.text, fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis type="category" dataKey="name" tick={{ fill: C.text, fontSize: 11 }} axisLine={false} tickLine={false} width={70} />
+              <Tooltip contentStyle={{ background: "#0f172a", border: `1px solid ${C.border}`, borderRadius: "8px", color: C.bright, fontSize: "12px" }} />
               <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                {barData.map((entry, i) => (
-                  <Cell key={i} fill={entry.fill} />
-                ))}
+                {barData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Finding types */}
-        <div style={{
-          background: COLORS.bg, border: `1px solid ${COLORS.border}`,
-          borderRadius: "12px", padding: "24px"
-        }}>
-          <h2 style={{ fontSize: "15px", fontWeight: "600", color: "#f1f5f9", marginBottom: "20px" }}>
-            ⚠️ Finding Types
+        {/* Finding types + Quick actions */}
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: "12px", padding: "24px" }}>
+          <h2 style={{ fontSize: "14px", fontWeight: "600", color: C.bright, marginBottom: "20px", letterSpacing: "0.5px" }}>
+            ⚠️ FINDING TYPES
           </h2>
           {typeData.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "40px", color: COLORS.low }}>
+            <div style={{ textAlign: "center", padding: "24px", color: C.low }}>
               <div style={{ fontSize: "32px" }}>✅</div>
-              <div style={{ marginTop: "8px", fontSize: "14px" }}>No issues detected!</div>
+              <div style={{ marginTop: "8px", fontSize: "13px" }}>No issues detected!</div>
             </div>
           ) : (
-            <div>
+            <div style={{ marginBottom: "16px" }}>
               {typeData.map((t, i) => (
                 <div key={i} style={{
-                  display: "flex", justifyContent: "space-between",
-                  alignItems: "center", padding: "10px 0",
-                  borderBottom: i < typeData.length - 1 ? `1px solid ${COLORS.border}` : "none"
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  padding: "8px 0",
+                  borderBottom: i < typeData.length - 1 ? `1px solid ${C.border}` : "none"
                 }}>
-                  <span style={{ fontSize: "13px", color: COLORS.text, textTransform: "capitalize" }}>
-                    {t.type.toLowerCase()}
-                  </span>
+                  <span style={{ fontSize: "12px", color: C.text }}>{t.type.toLowerCase()}</span>
                   <span style={{
                     padding: "2px 10px", borderRadius: "20px",
-                    background: "rgba(239,68,68,0.1)", color: COLORS.high,
-                    fontSize: "12px", fontWeight: "700"
+                    background: "rgba(239,68,68,0.1)", color: C.high,
+                    fontSize: "11px", fontWeight: "700"
                   }}>{t.count}</span>
                 </div>
               ))}
             </div>
           )}
-
-          {/* Quick actions */}
-          <div style={{ marginTop: "16px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginTop: "auto" }}>
             {[
               { label: "🔐 Pre-Delegate", path: "/pre-delegate" },
               { label: "🤝 Delegate", path: "/delegate" },
+              { label: "🔍 Audit", path: "/audit" },
+              { label: "🏅 Certify", path: "/certify" },
             ].map(a => (
               <button key={a.path} onClick={() => navigate(a.path)} style={{
-                flex: 1, padding: "8px",
-                background: "linear-gradient(135deg, #667eea, #764ba2)",
-                border: "none", borderRadius: "6px",
-                color: "white", cursor: "pointer", fontSize: "12px", fontWeight: "600"
+                padding: "8px",
+                background: "linear-gradient(135deg, #667eea22, #764ba222)",
+                border: `1px solid #667eea44`,
+                borderRadius: "6px", color: "#a78bfa",
+                cursor: "pointer", fontSize: "11px", fontWeight: "600"
               }}>{a.label}</button>
             ))}
           </div>

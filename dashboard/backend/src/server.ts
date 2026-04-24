@@ -6,7 +6,10 @@ import axios from "axios";
 import * as dotenv from "dotenv";
 import * as path from "path";
 
-dotenv.config({ path: path.join(__dirname, "../../../.env") });
+dotenv.config({ path: "C:\\PolicyGuard\\policy-guard\\.env" });
+
+console.log("🔍 OM URL:", process.env.OPENMETADATA_URL);
+console.log("🔍 OM USER:", process.env.OPENMETADATA_USER);
 
 const app = express();
 app.use(cors());
@@ -34,6 +37,12 @@ app.post("/api/login", async (req, res) => {
 app.get("/api/stats", async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
+    console.log("Stats token:", token ? token.substring(0, 20) + "..." : "MISSING");
+
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
     const client = axios.create({
       baseURL: `${OM_URL}/api/v1`,
       headers: { Authorization: `Bearer ${token}` },
@@ -48,13 +57,17 @@ app.get("/api/stats", async (req, res) => {
     ]);
 
     res.json({
-      policies: policies.data.paging?.total || policies.data.data.length,
-      roles: roles.data.paging?.total || roles.data.data.length,
-      glossaries: glossaries.data.paging?.total || glossaries.data.data.length,
-      users: users.data.paging?.total || users.data.data.length,
-      teams: teams.data.paging?.total || teams.data.data.length,
+      policies: policies.data.data?.length ?? 0,
+      roles: roles.data.data?.length ?? 0,
+      glossaries: glossaries.data.data?.length ?? 0,
+      users: users.data.data?.length ?? 0,
+      teams: teams.data.data?.length ?? 0,
     });
   } catch (err: any) {
+    console.error("Stats error:", err.message);
+    if (err.response?.status === 401) {
+      return res.status(401).json({ error: "Token expired — please login again" });
+    }
     res.status(500).json({ error: err.message });
   }
 });
@@ -77,7 +90,6 @@ app.get("/api/findings", async (req, res) => {
     const glossaries = glossariesRes.data.data;
     const findings: any[] = [];
 
-    // Check DENY isOwner() policies
     for (const policy of policies) {
       for (const rule of policy.rules || []) {
         if (rule.effect === "DENY" && rule.condition?.includes("isOwner()")) {
@@ -93,7 +105,6 @@ app.get("/api/findings", async (req, res) => {
       }
     }
 
-    // Check glossary ownership
     for (const glossary of glossaries) {
       const owners = glossary.owners || [];
       const onlyAdminOwns = owners.length > 0 && owners.every((o: any) => o.name === "admin");
@@ -129,7 +140,6 @@ app.get("/api/findings", async (req, res) => {
       }
     }
 
-    // Check empty policies
     for (const policy of policies) {
       if (!policy.rules || policy.rules.length === 0) {
         findings.push({
@@ -145,6 +155,7 @@ app.get("/api/findings", async (req, res) => {
 
     res.json(findings);
   } catch (err: any) {
+    console.error("Findings error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -158,18 +169,24 @@ app.get("/api/certifications", async (req, res) => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    const glossariesRes = await client.get("/glossaries?limit=50&fields=owners,tags,customProperties");
+    const glossariesRes = await client.get("/glossaries?limit=50&fields=owners,tags");
     const glossaries = glossariesRes.data.data;
 
     const certifications = glossaries.map((g: any) => {
       const owners = g.owners || [];
-      const certifiedOn = g.customProperties?.certifiedOn || null;
-      const validUntil = g.customProperties?.validUntil || null;
 
+      // Parse cert data from description if stored there
+      const desc = g.description || "";
+      const certMatch = desc.match(/certifiedOn=([^&\s]+).*?validUntil=([^&\s]+)/);
+      
+      let certifiedOn = null;
+      let validUntil = null;
       let daysRemaining = null;
       let status = "UNCERTIFIED";
 
-      if (validUntil) {
+      if (certMatch) {
+        certifiedOn = certMatch[1];
+        validUntil = certMatch[2];
         const diff = new Date(validUntil).getTime() - new Date().getTime();
         daysRemaining = Math.floor(diff / (1000 * 60 * 60 * 24));
         if (daysRemaining < 0) status = "EXPIRED";
@@ -191,6 +208,7 @@ app.get("/api/certifications", async (req, res) => {
 
     res.json(certifications);
   } catch (err: any) {
+    console.error("Certifications error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -209,23 +227,30 @@ app.post("/api/certify/:assetId", async (req, res) => {
 
     const certifiedOn = new Date().toISOString();
     const validUntil = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
-
     const entityPath = assetType === "Glossary" ? "glossaries" : "tables";
+
+    // Get current description
+    const asset = await client.get(`/${entityPath}/${assetId}`);
+    let currentDesc = asset.data.description || "";
+
+    // Remove old cert metadata if exists
+    currentDesc = currentDesc.replace(/\n\n<!-- PolicyGuard:.*?-->/s, "");
+
+    // Add new cert metadata
+    const certMeta = `\n\n<!-- PolicyGuard: certifiedOn=${certifiedOn} validUntil=${validUntil} -->`;
 
     await client.patch(
       `/${entityPath}/${assetId}`,
-      [
-        { op: "add", path: "/extension", value: {
-          certifiedOn,
-          validUntil,
-          certificationStatus: "ACTIVE",
-        }},
-      ],
+      [{ op: "add", path: "/description", value: currentDesc + certMeta }],
       { headers: { "Content-Type": "application/json-patch+json" }}
     );
 
     res.json({ success: true, certifiedOn, validUntil });
   } catch (err: any) {
+    console.error("Certify error:", err.message);
+    if (err.response?.data) {
+      console.error("Details:", JSON.stringify(err.response.data));
+    }
     res.status(500).json({ error: err.message });
   }
 });
@@ -236,47 +261,111 @@ const server = app.listen(PORT, () => {
 });
 
 // ─── WEBSOCKET FOR TERMINAL ───────────────────────────────────
-// ─── WEBSOCKET FOR TERMINAL ───────────────────────────────────
 const wss = new WebSocketServer({ server });
 
 wss.on("connection", (ws: WebSocket) => {
   console.log("Terminal client connected");
 
-    ws.on("message", (message: string) => {
-      const { command } = JSON.parse(message.toString());
-      const cliPath = path.join(__dirname, "../../../");
+  ws.on("message", (message: string) => {
+    const { command } = JSON.parse(message.toString());
+    const cliPath = path.join(__dirname, "../../../");
 
-      // Strip timestamp suffix e.g. "delegate-dry-123456" → "delegate" + dryRun flag
-      const isDryRun = command.includes("dry");
-      const baseCommand = command
-        .replace(/-dry-\d+$/, "")
-        .replace(/-\d+$/, "");
+    const isDryRun = command.includes("dry");
+    const baseCommand = command
+      .replace(/-dry-\d+$/, "")
+      .replace(/-\d+$/, "");
 
-      const validCommands = ["audit", "certify", "delegate", "pre-delegate"];
+    const validCommands = ["audit", "certify", "delegate", "pre-delegate"];
 
-      if (!validCommands.includes(baseCommand)) {
-        ws.send(JSON.stringify({ type: "error", data: "Invalid command\n" }));
-        return;
-      }
+    if (!validCommands.includes(baseCommand)) {
+      ws.send(JSON.stringify({ type: "error", data: "Invalid command\n" }));
+      return;
+    }
 
-      const args = ["ts-node", "src/cli.ts", baseCommand];
-      if (isDryRun) args.push("--dry-run");
+    const args = ["ts-node", "src/cli.ts", baseCommand];
+    if (isDryRun) args.push("--dry-run");
 
-      const proc = spawn("npx", args, {
-        cwd: cliPath,
-        shell: true,
-      });
-
-      proc.stdout.on("data", (data: Buffer) => {
-        ws.send(JSON.stringify({ type: "stdout", data: data.toString() }));
-      });
-
-      proc.stderr.on("data", (data: Buffer) => {
-        ws.send(JSON.stringify({ type: "stderr", data: data.toString() }));
-      });
-
-      proc.on("close", (code: number) => {
-        ws.send(JSON.stringify({ type: "done", data: `\nProcess exited with code ${code}\n` }));
-      });
+    const proc = spawn("npx", args, {
+      cwd: cliPath,
+      shell: true,
     });
+
+    proc.stdout.on("data", (data: Buffer) => {
+      ws.send(JSON.stringify({ type: "stdout", data: data.toString() }));
+    });
+
+    proc.stderr.on("data", (data: Buffer) => {
+      ws.send(JSON.stringify({ type: "stderr", data: data.toString() }));
+    });
+
+    proc.on("close", (code: number) => {
+      ws.send(JSON.stringify({ type: "done", data: `\nProcess exited with code ${code}\n` }));
+    });
+  });
+});
+
+
+// ─── GOVERNANCE SCORE ─────────────────────────────────────────
+app.get("/api/score", async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    const client = axios.create({
+      baseURL: `${OM_URL}/api/v1`,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const [policiesRes, glossariesRes, usersRes, teamsRes] = await Promise.all([
+      client.get("/policies?limit=50"),
+      client.get("/glossaries?limit=50&fields=owners,tags"),
+      client.get("/users?limit=50&isBot=false"),
+      client.get("/teams?limit=50"),
+    ]);
+
+    const policies = policiesRes.data.data;
+    const glossaries = glossariesRes.data.data;
+    const users = usersRes.data.data;
+    const teams = teamsRes.data.data;
+
+    // Policy coverage score (0-25)
+    const policiesWithRules = policies.filter((p: any) => p.rules?.length > 0).length;
+    const policyCoverage = policies.length > 0
+      ? Math.round((policiesWithRules / policies.length) * 25)
+      : 0;
+
+    // Ownership health score (0-25)
+    const glossariesWithTeamOwner = glossaries.filter((g: any) =>
+      g.owners?.some((o: any) => o.type === "team")
+    ).length;
+    const ownershipHealth = glossaries.length > 0
+      ? Math.round((glossariesWithTeamOwner / glossaries.length) * 25)
+      : 0;
+
+    // Team structure score (0-25)
+    const groupTeams = teams.filter((t: any) => t.teamType === "Group").length;
+    const teamScore = Math.min(25, groupTeams * 5);
+
+    // Certification score (0-25)
+    const certifiedGlossaries = glossaries.filter((g: any) =>
+      g.description?.includes("PolicyGuard: certifiedOn")
+    ).length;
+    const certScore = glossaries.length > 0
+      ? Math.round((certifiedGlossaries / glossaries.length) * 25)
+      : 0;
+
+    const total = policyCoverage + ownershipHealth + teamScore + certScore;
+
+    res.json({
+      total,
+      breakdown: {
+        policyCoverage,
+        ownershipHealth,
+        teamStructure: teamScore,
+        certificationRate: certScore,
+      },
+      risk: total >= 75 ? "LOW" : total >= 50 ? "MODERATE" : "HIGH",
+    });
+  } catch (err: any) {
+    console.error("Score error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
