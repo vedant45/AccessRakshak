@@ -53,7 +53,7 @@ function downloadPDF(title: string, headers: string[], rows: string[][]) {
       <table>
         <thead><tr>${headers.map(h => `<th>${h}</th>`).join("")}</tr></thead>
         <tbody>
-          ${rows.map(row => `<tr>${row.map((cell, i) => {
+          ${rows.map(row => `<tr>${row.map((cell) => {
             const cls = cell === "HIGH" ? "badge-high" : cell === "MEDIUM" ? "badge-medium" : cell === "LOW" ? "badge-low" : "";
             return `<td${cls ? ` class="${cls}"` : ""}>${cell}</td>`;
           }).join("")}</tr>`).join("")}
@@ -73,7 +73,7 @@ export default function Reports() {
   const { token } = useAuth();
   const [findings, setFindings] = useState<any[]>([]);
   const [certs, setCerts] = useState<any[]>([]);
-  const [stats, setStats] = useState<any>(null);
+  const [setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
