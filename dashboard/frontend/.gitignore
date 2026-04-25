@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+cloudflared.exe
+node_modules/
+dist/
+.env
+docker-volume/
+*.log
