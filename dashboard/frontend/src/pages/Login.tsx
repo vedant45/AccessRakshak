@@ -52,7 +52,7 @@ export default function Login() {
             background: "linear-gradient(135deg, #667eea, #764ba2)",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
-          }}>PolicyGuard</h1>
+          }}>Sentari</h1>
           <p style={{ color: "#718096", fontSize: "14px", marginTop: "4px" }}>
             OpenMetadata Governance Platform
           </p>

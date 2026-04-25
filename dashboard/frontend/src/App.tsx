@@ -6,6 +6,8 @@ import Audit from "./pages/Audit";
 import Delegate from "./pages/Delegate";
 import Certify from "./pages/Certify";
 import PreDelegate from "./pages/PreDelegate";
+import Classify from "./pages/Classify";
+import Reports from "./pages/Reports.tsx";
 import Sidebar from "./components/Sidebar";
 
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
@@ -14,7 +16,7 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ display: "flex" }}>
       <Sidebar />
-      <main style={{ marginLeft: "220px", flex: 1, minHeight: "100vh", padding: "32px" }}>
+      <main style={{ marginLeft: "220px", flex: 1, minHeight: "100vh", padding: "32px", transition: "margin-left 0.2s ease" }}>
         {children}
       </main>
     </div>
@@ -31,6 +33,8 @@ function AppRoutes() {
       <Route path="/delegate" element={<ProtectedLayout><Delegate /></ProtectedLayout>} />
       <Route path="/certify" element={<ProtectedLayout><Certify /></ProtectedLayout>} />
       <Route path="/pre-delegate" element={<ProtectedLayout><PreDelegate /></ProtectedLayout>} />
+      <Route path="/classify" element={<ProtectedLayout><Classify /></ProtectedLayout>} />
+      <Route path="/reports" element={<ProtectedLayout><Reports /></ProtectedLayout>} />
     </Routes>
   );
 }

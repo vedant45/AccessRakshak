@@ -27,9 +27,7 @@ export default function PreDelegate() {
         background: "#1e293b", border: "1px solid #f59e0b33",
         borderRadius: "10px", padding: "16px", marginBottom: "24px"
       }}>
-        <p style={{ color: "#f59e0b", fontSize: "14px", fontWeight: "600" }}>
-          ⚠️ SailPoint IIQ Pattern
-        </p>
+        
         <p style={{ color: "#94a3b8", fontSize: "13px", marginTop: "4px" }}>
           Pre-delegation scans all asset owners and reassigns from deleted/inactive 
           users to the Data-Stewards team before certification runs. 

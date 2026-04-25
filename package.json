@@ -1,5 +1,5 @@
 {
-  "name": "policy-guard",
+  "name": "sentari",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -9,6 +9,8 @@
   "delegate:dry": "ts-node src/cli.ts delegate --dry-run",
   "build": "tsc",
   "start": "node dist/cli.js audit",
+  "classify": "ts-node src/cli.ts classify",
+  "classify:report": "ts-node src/cli.ts classify --report-only",
   "pre-delegate": "ts-node src/cli.ts pre-delegate",
   "pre-delegate:dry": "ts-node src/cli.ts pre-delegate --dry-run"
 },

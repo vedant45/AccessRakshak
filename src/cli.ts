@@ -18,6 +18,8 @@ import {
 import { evaluatePolicies } from "./evaluator/policyEvaluator";
 import { evaluateCertifications } from "./evaluator/certificationEvaluator";
 import { evaluateDelegation } from "./evaluator/delegationEvaluator";
+import { classifyAsset, CLASSIFICATION_PATTERNS } from "./evaluator/classificationEvaluator";
+import { getTablesWithColumns, applyClassificationTag } from "./api/openmetadata";
 
 dotenv.config();
 
@@ -439,6 +441,90 @@ program
       }
     }
   });
+
+
+
+
+        // ─── CLASSIFY COMMAND ────────────────────────────────────────
+      program
+        .command("classify")
+        .description("Auto-classify data assets using domain-specific pattern recognizers")
+        .option("--report-only", "Report findings without applying tags", false)
+        .action(async (options) => {
+          console.log("\n🏷️  PolicyGuard - Auto Classification Engine\n");
+          console.log("   Patterns: Financial, Healthcare, Geo, Infrastructure, EU PII\n");
+
+          if (options.reportOnly) {
+            console.log("📋 REPORT ONLY MODE — no tags will be applied\n");
+          }
+
+          try {
+            console.log("📊 Fetching tables with columns...");
+            const tables = await getTablesWithColumns();
+            console.log(`   Found ${tables.length} tables\n`);
+
+            const allFindings: any[] = [];
+
+            for (const table of tables) {
+              const columns = table.columns || [];
+              const findings = classifyAsset(
+                table.name,
+                table.id,
+                "Table",
+                columns.map((c: any) => ({ name: c.name, description: c.description }))
+              );
+              allFindings.push(...findings);
+            }
+
+            // Summary by domain
+            const domains = [...new Set(allFindings.map(f => f.domain))];
+
+            console.log("━".repeat(60));
+            console.log("🏷️  CLASSIFICATION SUMMARY");
+            console.log("━".repeat(60));
+            console.log(`📦 Total findings: ${allFindings.length}`);
+            console.log(`📊 Tables scanned: ${tables.length}`);
+            console.log(`🔍 Patterns used:  ${CLASSIFICATION_PATTERNS.length}\n`);
+
+            if (allFindings.length === 0) {
+              console.log("✅ No sensitive data patterns detected!\n");
+              return;
+            }
+
+            // Group by domain
+            for (const domain of domains) {
+              const domainFindings = allFindings.filter(f => f.domain === domain);
+              console.log(`\n📁 ${domain} (${domainFindings.length} findings):`);
+              for (const f of domainFindings) {
+                const icon = f.severity === "HIGH" ? "🔴" : f.severity === "MEDIUM" ? "🟡" : "🟢";
+                console.log(`  ${icon} [${f.severity}] ${f.assetName} → ${f.matchedOn}`);
+                console.log(`     Tag: ${f.tag}`);
+                console.log(`     ${f.description}`);
+              }
+            }
+
+            if (!options.reportOnly) {
+              console.log("\n" + "━".repeat(60));
+              console.log("🏷️  Applying classification tags...\n");
+
+              for (const f of allFindings) {
+                try {
+                  await applyClassificationTag(f.assetId, f.tag);
+                  console.log(`✅ Tagged: ${f.assetName} → ${f.tag}`);
+                } catch (e: any) {
+                  console.log(`⚠️  Skipped: ${f.assetName} → ${e.message}`);
+                }
+              }
+            }
+
+            console.log("\n" + "━".repeat(60));
+            console.log("✅ Classification complete!");
+            console.log("━".repeat(60) + "\n");
+
+          } catch (err: any) {
+            console.error("❌ Error:", err.message);
+          }
+        });
 
 // ─── ALWAYS LAST ─────────────────────────────────────────────
 program.parse();

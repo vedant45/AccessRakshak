@@ -149,3 +149,35 @@ export async function getUserById(userId: string) {
     return null;
   }
 }
+
+
+
+export async function getTablesWithColumns() {
+  const client = await getClient();
+  const res = await client.get("/tables?limit=50&fields=columns,owners,tags&include=all");
+  return res.data.data;
+}
+
+export async function applyClassificationTag(
+  tableId: string,
+  tagFQN: string
+) {
+  const client = await getClient();
+  const res = await client.patch(
+    `/tables/${tableId}`,
+    [
+      {
+        op: "add",
+        path: "/tags/-",
+        value: {
+          tagFQN,
+          source: "Classification",
+          labelType: "Automated",
+          state: "Suggested",
+        }
+      }
+    ],
+    { headers: { "Content-Type": "application/json-patch+json" }}
+  );
+  return res.data;
+}

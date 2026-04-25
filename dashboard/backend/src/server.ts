@@ -38,10 +38,7 @@ app.get("/api/stats", async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
     console.log("Stats token:", token ? token.substring(0, 20) + "..." : "MISSING");
-
-    if (!token) {
-      return res.status(401).json({ error: "No token provided" });
-    }
+    if (!token) return res.status(401).json({ error: "No token provided" });
 
     const client = axios.create({
       baseURL: `${OM_URL}/api/v1`,
@@ -65,9 +62,7 @@ app.get("/api/stats", async (req, res) => {
     });
   } catch (err: any) {
     console.error("Stats error:", err.message);
-    if (err.response?.status === 401) {
-      return res.status(401).json({ error: "Token expired — please login again" });
-    }
+    if (err.response?.status === 401) return res.status(401).json({ error: "Token expired" });
     res.status(500).json({ error: err.message });
   }
 });
@@ -111,45 +106,17 @@ app.get("/api/findings", async (req, res) => {
       const hasTeamOwner = owners.some((o: any) => o.type === "team");
 
       if (owners.length === 0) {
-        findings.push({
-          severity: "HIGH",
-          type: "NO_OWNER",
-          asset: glossary.name,
-          assetType: "Glossary",
-          issue: "Glossary has no owner.",
-          recommendation: "Assign an owner or team.",
-        });
+        findings.push({ severity: "HIGH", type: "NO_OWNER", asset: glossary.name, assetType: "Glossary", issue: "Glossary has no owner.", recommendation: "Assign an owner or team." });
       } else if (onlyAdminOwns) {
-        findings.push({
-          severity: "HIGH",
-          type: "ADMIN_ONLY_OWNER",
-          asset: glossary.name,
-          assetType: "Glossary",
-          issue: "Only admin owns this glossary — single point of failure.",
-          recommendation: "Assign a specific team as owner.",
-        });
+        findings.push({ severity: "HIGH", type: "ADMIN_ONLY_OWNER", asset: glossary.name, assetType: "Glossary", issue: "Only admin owns this glossary — single point of failure.", recommendation: "Assign a specific team as owner." });
       } else if (!hasTeamOwner) {
-        findings.push({
-          severity: "MEDIUM",
-          type: "NO_TEAM_OWNER",
-          asset: glossary.name,
-          assetType: "Glossary",
-          issue: "No team owner — only individual users.",
-          recommendation: "Assign a team for better governance.",
-        });
+        findings.push({ severity: "MEDIUM", type: "NO_TEAM_OWNER", asset: glossary.name, assetType: "Glossary", issue: "No team owner — only individual users.", recommendation: "Assign a team for better governance." });
       }
     }
 
     for (const policy of policies) {
       if (!policy.rules || policy.rules.length === 0) {
-        findings.push({
-          severity: "LOW",
-          type: "EMPTY_POLICY",
-          asset: policy.name,
-          assetType: "Policy",
-          issue: "Policy has no rules defined.",
-          recommendation: "Add rules or remove this policy.",
-        });
+        findings.push({ severity: "LOW", type: "EMPTY_POLICY", asset: policy.name, assetType: "Policy", issue: "Policy has no rules defined.", recommendation: "Add rules or remove this policy." });
       }
     }
 
@@ -174,15 +141,10 @@ app.get("/api/certifications", async (req, res) => {
 
     const certifications = glossaries.map((g: any) => {
       const owners = g.owners || [];
-
-      // Parse cert data from description if stored there
       const desc = g.description || "";
       const certMatch = desc.match(/certifiedOn=([^&\s]+).*?validUntil=([^&\s]+)/);
-      
-      let certifiedOn = null;
-      let validUntil = null;
-      let daysRemaining = null;
-      let status = "UNCERTIFIED";
+
+      let certifiedOn = null, validUntil = null, daysRemaining = null, status = "UNCERTIFIED";
 
       if (certMatch) {
         certifiedOn = certMatch[1];
@@ -195,14 +157,9 @@ app.get("/api/certifications", async (req, res) => {
       }
 
       return {
-        assetName: g.name,
-        assetType: "Glossary",
-        assetId: g.id,
+        assetName: g.name, assetType: "Glossary", assetId: g.id,
         owners: owners.map((o: any) => o.name).join(", ") || "None",
-        certifiedOn,
-        validUntil,
-        daysRemaining,
-        status,
+        certifiedOn, validUntil, daysRemaining, status,
       };
     });
 
@@ -229,14 +186,9 @@ app.post("/api/certify/:assetId", async (req, res) => {
     const validUntil = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
     const entityPath = assetType === "Glossary" ? "glossaries" : "tables";
 
-    // Get current description
     const asset = await client.get(`/${entityPath}/${assetId}`);
     let currentDesc = asset.data.description || "";
-
-    // Remove old cert metadata if exists
     currentDesc = currentDesc.replace(/\n\n<!-- PolicyGuard:.*?-->/s, "");
-
-    // Add new cert metadata
     const certMeta = `\n\n<!-- PolicyGuard: certifiedOn=${certifiedOn} validUntil=${validUntil} -->`;
 
     await client.patch(
@@ -248,16 +200,100 @@ app.post("/api/certify/:assetId", async (req, res) => {
     res.json({ success: true, certifiedOn, validUntil });
   } catch (err: any) {
     console.error("Certify error:", err.message);
-    if (err.response?.data) {
-      console.error("Details:", JSON.stringify(err.response.data));
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── GOVERNANCE SCORE ────────────────────────────────────────
+app.get("/api/score", async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    const client = axios.create({
+      baseURL: `${OM_URL}/api/v1`,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const [policiesRes, glossariesRes, teamsRes] = await Promise.all([
+      client.get("/policies?limit=50"),
+      client.get("/glossaries?limit=50&fields=owners,tags"),
+      client.get("/teams?limit=50"),
+    ]);
+
+    const policies = policiesRes.data.data;
+    const glossaries = glossariesRes.data.data;
+    const teams = teamsRes.data.data;
+
+    const policiesWithRules = policies.filter((p: any) => p.rules?.length > 0).length;
+    const policyCoverage = policies.length > 0 ? Math.round((policiesWithRules / policies.length) * 25) : 0;
+
+    const glossariesWithTeamOwner = glossaries.filter((g: any) => g.owners?.some((o: any) => o.type === "team")).length;
+    const ownershipHealth = glossaries.length > 0 ? Math.round((glossariesWithTeamOwner / glossaries.length) * 25) : 0;
+
+    const groupTeams = teams.filter((t: any) => t.teamType === "Group").length;
+    const teamScore = Math.min(25, groupTeams * 5);
+
+    const certifiedGlossaries = glossaries.filter((g: any) => g.description?.includes("PolicyGuard: certifiedOn")).length;
+    const certScore = glossaries.length > 0 ? Math.round((certifiedGlossaries / glossaries.length) * 25) : 0;
+
+    const total = policyCoverage + ownershipHealth + teamScore + certScore;
+
+    res.json({
+      total,
+      breakdown: { policyCoverage, ownershipHealth, teamStructure: teamScore, certificationRate: certScore },
+      risk: total >= 75 ? "LOW" : total >= 50 ? "MODERATE" : "HIGH",
+    });
+  } catch (err: any) {
+    console.error("Score error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── CLASSIFICATION ──────────────────────────────────────────
+app.get("/api/classifications", async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    const client = axios.create({
+      baseURL: `${OM_URL}/api/v1`,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const tablesRes = await client.get("/tables?limit=50&fields=columns,owners,tags&include=all");
+    const tables = tablesRes.data.data;
+
+    const { classifyAsset, CLASSIFICATION_PATTERNS } = await import("./classificationEvaluator");
+
+    const allFindings: any[] = [];
+    for (const table of tables) {
+      const columns = (table.columns || []).map((c: any) => ({
+        name: c.name,
+        description: c.description || ""
+      }));
+      const findings = classifyAsset(table.name, table.id, "Table", columns);
+      allFindings.push(...findings);
     }
+
+    const domains = [...new Set(allFindings.map((f: any) => f.domain))];
+    const summary = domains.map(domain => ({
+      domain,
+      count: allFindings.filter((f: any) => f.domain === domain).length,
+      high: allFindings.filter((f: any) => f.domain === domain && f.severity === "HIGH").length,
+    }));
+
+    res.json({
+      findings: allFindings,
+      summary,
+      tablesScanned: tables.length,
+      patternsUsed: CLASSIFICATION_PATTERNS.length,
+    });
+  } catch (err: any) {
+    console.error("Classification error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
 // ─── HTTP SERVER ─────────────────────────────────────────────
 const server = app.listen(PORT, () => {
-  console.log(`\n🛡️  PolicyGuard Backend running on http://localhost:${PORT}\n`);
+  console.log(`\n🛡️  Sentari Backend running on http://localhost:${PORT}\n`);
 });
 
 // ─── WEBSOCKET FOR TERMINAL ───────────────────────────────────
@@ -275,7 +311,7 @@ wss.on("connection", (ws: WebSocket) => {
       .replace(/-dry-\d+$/, "")
       .replace(/-\d+$/, "");
 
-    const validCommands = ["audit", "certify", "delegate", "pre-delegate"];
+    const validCommands = ["audit", "certify", "delegate", "pre-delegate", "classify"];
 
     if (!validCommands.includes(baseCommand)) {
       ws.send(JSON.stringify({ type: "error", data: "Invalid command\n" }));
@@ -283,7 +319,7 @@ wss.on("connection", (ws: WebSocket) => {
     }
 
     const args = ["ts-node", "src/cli.ts", baseCommand];
-    if (isDryRun) args.push("--dry-run");
+    if (isDryRun) args.push("--report-only");
 
     const proc = spawn("npx", args, {
       cwd: cliPath,
@@ -305,67 +341,51 @@ wss.on("connection", (ws: WebSocket) => {
 });
 
 
-// ─── GOVERNANCE SCORE ─────────────────────────────────────────
-app.get("/api/score", async (req, res) => {
+
+// ─── POLICIES LIST ───────────────────────────────────────────
+app.get("/api/policies", async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ error: "No token" });
     const client = axios.create({
       baseURL: `${OM_URL}/api/v1`,
       headers: { Authorization: `Bearer ${token}` },
     });
-
-    const [policiesRes, glossariesRes, usersRes, teamsRes] = await Promise.all([
-      client.get("/policies?limit=50"),
-      client.get("/glossaries?limit=50&fields=owners,tags"),
-      client.get("/users?limit=50&isBot=false"),
-      client.get("/teams?limit=50"),
-    ]);
-
-    const policies = policiesRes.data.data;
-    const glossaries = glossariesRes.data.data;
-    const users = usersRes.data.data;
-    const teams = teamsRes.data.data;
-
-    // Policy coverage score (0-25)
-    const policiesWithRules = policies.filter((p: any) => p.rules?.length > 0).length;
-    const policyCoverage = policies.length > 0
-      ? Math.round((policiesWithRules / policies.length) * 25)
-      : 0;
-
-    // Ownership health score (0-25)
-    const glossariesWithTeamOwner = glossaries.filter((g: any) =>
-      g.owners?.some((o: any) => o.type === "team")
-    ).length;
-    const ownershipHealth = glossaries.length > 0
-      ? Math.round((glossariesWithTeamOwner / glossaries.length) * 25)
-      : 0;
-
-    // Team structure score (0-25)
-    const groupTeams = teams.filter((t: any) => t.teamType === "Group").length;
-    const teamScore = Math.min(25, groupTeams * 5);
-
-    // Certification score (0-25)
-    const certifiedGlossaries = glossaries.filter((g: any) =>
-      g.description?.includes("PolicyGuard: certifiedOn")
-    ).length;
-    const certScore = glossaries.length > 0
-      ? Math.round((certifiedGlossaries / glossaries.length) * 25)
-      : 0;
-
-    const total = policyCoverage + ownershipHealth + teamScore + certScore;
-
-    res.json({
-      total,
-      breakdown: {
-        policyCoverage,
-        ownershipHealth,
-        teamStructure: teamScore,
-        certificationRate: certScore,
-      },
-      risk: total >= 75 ? "LOW" : total >= 50 ? "MODERATE" : "HIGH",
-    });
+    const res2 = await client.get("/policies?limit=50");
+    res.json(res2.data.data);
   } catch (err: any) {
-    console.error("Score error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── ROLES LIST ──────────────────────────────────────────────
+app.get("/api/roles", async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ error: "No token" });
+    const client = axios.create({
+      baseURL: `${OM_URL}/api/v1`,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const res2 = await client.get("/roles?limit=50");
+    res.json(res2.data.data);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── GLOSSARIES LIST ─────────────────────────────────────────
+app.get("/api/glossaries", async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ error: "No token" });
+    const client = axios.create({
+      baseURL: `${OM_URL}/api/v1`,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const res2 = await client.get("/glossaries?limit=50&fields=owners,tags");
+    res.json(res2.data.data);
+  } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
