@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import Terminal from "../components/Terminal";
+import { getApi } from "../api";
 
 const DOMAIN_COLORS: Record<string, string> = {
   "Financial": "#f59e0b",
@@ -28,12 +29,11 @@ export default function Classify() {
   const [command, setCommand] = useState<string | null>(null);
   const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
 
-  const fetchData = async () => {
+    const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("/api/classifications", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const api = getApi(token!);
+      const res = await api.get("/api/classifications");
       setData(res.data);
     } catch (e) {
       console.error(e);

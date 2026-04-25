@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { WS_URL } from "../config";
 
 interface Props {
   command: string | null;
@@ -37,7 +38,8 @@ export default function Terminal({ command, onDone }: Props) {
     ]);
     setRunning(true);
 
-    const ws = new WebSocket("ws://localhost:8080");
+    // const ws = new WebSocket("ws://localhost:8080");
+    const ws = new WebSocket(WS_URL);
     wsRef.current = ws;
 
     ws.onopen = () => ws.send(JSON.stringify({ command }));

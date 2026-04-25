@@ -2,21 +2,19 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import Terminal from "../components/Terminal";
-
+import { getApi } from "../api";
 export default function Certify() {
   const { token } = useAuth();
   const [certs, setCerts] = useState<any[]>([]);
   const [command, setCommand] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchCerts = async () => {
-    const res = await axios.get("/api/certifications", {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    setCerts(res.data);
-    setLoading(false);
-  };
-
+      const fetchCerts = async () => {
+      const api = getApi(token!);
+      const res = await api.get("/api/certifications");
+      setCerts(res.data);
+      setLoading(false);
+    };
   useEffect(() => { fetchCerts(); }, []);
 
   const certify = async (assetId: string, assetType: string) => {
