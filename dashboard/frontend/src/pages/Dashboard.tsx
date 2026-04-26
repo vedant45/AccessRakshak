@@ -1279,10 +1279,7 @@
 
 
 
-
-
-//third part 
-
+//third ui
 
 
 import { getApi } from "../api";
@@ -1296,301 +1293,283 @@ import {
 } from "recharts";
 
 const C = {
-  high: "#f87171",
-  medium: "#fbbf24",
-  low: "#34d399",
-  purple: "#a78bfa",
-  blue: "#60a5fa",
-  bg: "#07090f",
-  card: "#0d1117",
-  border: "#1a2332",
-  borderLight: "#1e2d3d",
-  text: "#64748b",
-  textMid: "#94a3b8",
-  bright: "#e2e8f0",
-  white: "#f8fafc",
+  high: "#ef4444",
+  medium: "#f59e0b",
+  low: "#22c55e",
+  purple: "#8b5cf6",
+  blue: "#3b82f6",
+  card: "#111318",
+  cardBorder: "#1f2937",
+  bg: "#0a0c10",
+  text: "#6b7280",
+  textMid: "#9ca3af",
+  bright: "#f9fafb",
+  white: "#ffffff",
   accent: "#6366f1",
 };
 
 const GlobalStyles = () => (
   <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
-    * { box-sizing: border-box; }
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(10px); }
+      from { opacity: 0; transform: translateY(8px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
     @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
+      from { opacity: 0; transform: translateY(16px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; } 50% { opacity: 0.3; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .anim-1 { animation: fadeUp 0.35s ease both 0.05s; }
+    .anim-2 { animation: fadeUp 0.35s ease both 0.1s; }
+    .anim-3 { animation: fadeUp 0.35s ease both 0.15s; }
+    .anim-4 { animation: fadeUp 0.35s ease both 0.2s; }
+    .anim-5 { animation: fadeUp 0.35s ease both 0.25s; }
+    .anim-6 { animation: fadeUp 0.35s ease both 0.3s; }
+
+    .stat-card {
+      transition: background 0.15s, border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+    }
+    .stat-card:hover {
+      background: #161b24 !important;
+      transform: translateY(-1px);
     }
 
-    .dash-row > * { animation: fadeUp 0.4s ease both; }
-    .dash-row > *:nth-child(1) { animation-delay: 0.05s; }
-    .dash-row > *:nth-child(2) { animation-delay: 0.1s; }
-    .dash-row > *:nth-child(3) { animation-delay: 0.15s; }
-    .dash-row > *:nth-child(4) { animation-delay: 0.2s; }
-    .dash-row > *:nth-child(5) { animation-delay: 0.25s; }
-    .dash-row > *:nth-child(6) { animation-delay: 0.3s; }
+    .pill-btn {
+      transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+      cursor: pointer;
+    }
+    .pill-btn:hover { opacity: 0.8; }
 
-    .stat-card { transition: all 0.2s cubic-bezier(0.4,0,0.2,1); }
-    .stat-card:hover { transform: translateY(-2px); }
+    .action-link {
+      transition: color 0.15s, background 0.15s;
+      cursor: pointer;
+    }
+    .action-link:hover { background: rgba(255,255,255,0.04) !important; }
 
-    .nav-btn { transition: all 0.15s ease; }
-    .nav-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+    .modal-row {
+      transition: background 0.12s;
+      cursor: default;
+    }
+    .modal-row:hover { background: #161b24 !important; }
 
-    .action-btn { transition: all 0.15s ease; }
-    .action-btn:hover { transform: translateY(-1px); opacity: 0.85; }
-
-    .close-btn:hover { background: #1a2332 !important; color: #e2e8f0 !important; }
-
-    .modal-scroll::-webkit-scrollbar { width: 4px; }
+    .modal-scroll::-webkit-scrollbar { width: 3px; }
     .modal-scroll::-webkit-scrollbar-track { background: transparent; }
-    .modal-scroll::-webkit-scrollbar-thumb { background: #1e2d3d; border-radius: 2px; }
+    .modal-scroll::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 2px; }
 
-    .modal-item:hover { background: #111827 !important; border-color: #1e2d3d !important; }
-
-    input:focus {
-      border-color: #6366f1 !important;
-      box-shadow: 0 0 0 3px rgba(99,102,241,0.1) !important;
+    input[type="text"]:focus {
       outline: none;
+      border-color: #6366f1 !important;
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.12) !important;
     }
+
+    .close-x { transition: background 0.12s, color 0.12s; cursor: pointer; }
+    .close-x:hover { background: #1f2937 !important; color: #f9fafb !important; }
   `}</style>
 );
 
 function AnimatedNumber({ target }: { target: number }) {
-  const [current, setCurrent] = useState(0);
+  const [n, setN] = useState(0);
   useEffect(() => {
-    if (target === 0) { setCurrent(0); return; }
-    let start = 0;
-    const step = Math.ceil(target / 40);
-    const timer = setInterval(() => {
-      start += step;
-      if (start >= target) { setCurrent(target); clearInterval(timer); }
-      else setCurrent(start);
-    }, 25);
-    return () => clearInterval(timer);
+    if (!target) { setN(0); return; }
+    let v = 0;
+    const step = Math.ceil(target / 35);
+    const t = setInterval(() => {
+      v += step;
+      if (v >= target) { setN(target); clearInterval(t); }
+      else setN(v);
+    }, 22);
+    return () => clearInterval(t);
   }, [target]);
-  return <>{current}</>;
+  return <>{n}</>;
 }
 
-function RiskGauge({ score, risk }: { score: number; risk: string }) {
+function Gauge({ score, risk }: { score: number; risk: string }) {
   const color = risk === "LOW" ? C.low : risk === "MODERATE" ? C.medium : C.high;
-  const [animated, setAnimated] = useState(0);
+  const [a, setA] = useState(0);
   useEffect(() => {
     let s = 0;
-    const timer = setInterval(() => {
-      s += 1;
-      if (s >= score) { setAnimated(score); clearInterval(timer); }
-      else setAnimated(s);
-    }, 15);
-    return () => clearInterval(timer);
+    const t = setInterval(() => { s++; if (s >= score) { setA(score); clearInterval(t); } else setA(s); }, 12);
+    return () => clearInterval(t);
   }, [score]);
-
-  const circumference = Math.PI * 56;
-  const strokeDash = (animated / 100) * circumference;
-
+  const c = Math.PI * 54;
+  const d = (a / 100) * c;
   return (
     <div style={{ textAlign: "center" }}>
-      <svg width="152" height="88" viewBox="0 0 152 88">
-        <path d="M 16 80 A 60 60 0 0 1 136 80" fill="none" stroke="#07090f" strokeWidth="8" strokeLinecap="round" />
-        <path d="M 16 80 A 60 60 0 0 1 136 80" fill="none" stroke={color} strokeWidth="8" strokeLinecap="round"
-          strokeDasharray={`${strokeDash} ${circumference}`} opacity="0.15" style={{ filter: "blur(4px)" }} />
-        <path d="M 16 80 A 60 60 0 0 1 136 80" fill="none" stroke={color} strokeWidth="3" strokeLinecap="round"
-          strokeDasharray={`${strokeDash} ${circumference}`}
-          style={{ transition: "stroke-dasharray 0.05s linear" }} />
-        <text x="76" y="68" textAnchor="middle" fill={color} fontSize="28" fontWeight="700"
-          fontFamily="'JetBrains Mono', monospace">{animated}</text>
-        <text x="76" y="82" textAnchor="middle" fill={C.text} fontSize="10" fontFamily="'Syne', sans-serif">/ 100</text>
+      <svg width="140" height="80" viewBox="0 0 140 80">
+        <path d="M14 74 A56 56 0 0 1 126 74" fill="none" stroke="#1f2937" strokeWidth="6" strokeLinecap="round" />
+        <path d="M14 74 A56 56 0 0 1 126 74" fill="none" stroke={color} strokeWidth="6" strokeLinecap="round"
+          strokeDasharray={`${d} ${c}`} style={{ transition: "stroke-dasharray 0.05s linear" }} />
+        <text x="70" y="64" textAnchor="middle" fill={color} fontSize="26" fontWeight="700"
+          fontFamily="'IBM Plex Mono', monospace">{a}</text>
+        <text x="70" y="77" textAnchor="middle" fill="#374151" fontSize="9"
+          fontFamily="'Plus Jakarta Sans', sans-serif">OUT OF 100</text>
       </svg>
-      <div style={{
-        display: "inline-flex", alignItems: "center", gap: "5px",
-        padding: "3px 12px", borderRadius: "20px",
-        background: `${color}12`, color,
-        fontSize: "10px", fontWeight: "700", letterSpacing: "1.5px",
-        border: `1px solid ${color}25`, fontFamily: "'Syne', sans-serif",
-      }}>
-        <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: color, display: "inline-block" }} />
-        {risk} RISK
-      </div>
+      <span style={{
+        display: "inline-block", padding: "2px 10px",
+        borderRadius: "4px", background: `${color}14`,
+        color, fontSize: "10px", fontWeight: "600",
+        letterSpacing: "0.8px", border: `1px solid ${color}22`,
+        fontFamily: "'Plus Jakarta Sans', sans-serif",
+      }}>{risk} RISK</span>
     </div>
   );
 }
 
-function ScoreBar({ value, max, color, label }: { value: number; max: number; color: string; label: string }) {
+function Bar2({ value, max, color }: { value: number; max: number; color: string }) {
   return (
-    <div style={{ marginBottom: "12px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "5px" }}>
-        <span style={{ fontSize: "11px", color: C.textMid, fontFamily: "'Syne', sans-serif" }}>{label}</span>
-        <span style={{ fontSize: "10px", color, fontFamily: "'JetBrains Mono', monospace", fontWeight: "600" }}>{value}/{max}</span>
-      </div>
-      <div style={{ height: "3px", background: "#07090f", borderRadius: "2px", overflow: "hidden" }}>
-        <div style={{
-          height: "100%", borderRadius: "2px",
-          width: `${(value / max) * 100}%`,
-          background: `linear-gradient(90deg, ${color}88, ${color})`,
-          boxShadow: `0 0 8px ${color}50`,
-          transition: "width 1s cubic-bezier(0.4,0,0.2,1)",
-        }} />
-      </div>
+    <div style={{ height: "2px", background: "#1f2937", borderRadius: "1px", overflow: "hidden" }}>
+      <div style={{
+        height: "100%", background: color, borderRadius: "1px",
+        width: `${(value / max) * 100}%`,
+        transition: "width 1s cubic-bezier(.4,0,.2,1)",
+      }} />
     </div>
   );
 }
 
 type ModalType = "Policies" | "Roles" | "Glossaries";
 
-function Tag({ label, color }: { label: string; color: string }) {
+function Chip({ label, color }: { label: string; color: string }) {
   return (
     <span style={{
-      fontSize: "10px", padding: "2px 7px", borderRadius: "4px",
-      background: `${color}12`, color, border: `1px solid ${color}25`,
-      whiteSpace: "nowrap", fontFamily: "'JetBrains Mono', monospace",
+      display: "inline-block", padding: "1px 7px",
+      borderRadius: "3px", fontSize: "10px",
+      background: `${color}12`, color,
+      border: `1px solid ${color}20`,
+      fontFamily: "'IBM Plex Mono', monospace",
+      whiteSpace: "nowrap",
     }}>{label}</span>
   );
 }
 
-function SearchableList({ type, data, accent }: { type: ModalType; data: any[]; accent: string }) {
-  const [query, setQuery] = useState("");
-  const filtered = data.filter((item: any) =>
-    (item.displayName || item.name || "").toLowerCase().includes(query.toLowerCase()) ||
-    (item.description || "").toLowerCase().includes(query.toLowerCase())
+function ModalList({ type, data, accent }: { type: ModalType; data: any[]; accent: string }) {
+  const [q, setQ] = useState("");
+  const list = data.filter(x =>
+    (x.displayName || x.name || "").toLowerCase().includes(q.toLowerCase()) ||
+    (x.description || "").toLowerCase().includes(q.toLowerCase())
   );
-
   return (
     <>
-      <div style={{ marginBottom: "12px", position: "relative" }}>
-        <span style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: C.text, fontSize: "12px" }}>⌕</span>
-        <input type="text" placeholder={`Search ${type.toLowerCase()}...`}
-          value={query} onChange={e => setQuery(e.target.value)}
-          style={{
-            width: "100%", padding: "9px 12px 9px 32px",
-            background: "#07090f", border: `1px solid ${C.border}`,
-            borderRadius: "8px", color: C.bright, fontSize: "13px",
-            boxSizing: "border-box", fontFamily: "'Syne', sans-serif",
-            transition: "border-color 0.15s, box-shadow 0.15s",
-          }} />
-      </div>
-
+      <input type="text" placeholder={`Search ${type.toLowerCase()}...`} value={q}
+        onChange={e => setQ(e.target.value)}
+        style={{
+          width: "100%", padding: "8px 12px", marginBottom: "10px",
+          background: C.bg, border: `1px solid ${C.cardBorder}`,
+          borderRadius: "8px", color: C.bright, fontSize: "13px",
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
+          boxSizing: "border-box" as any,
+        }} />
       <div className="modal-scroll" style={{ overflowY: "auto", flex: 1 }}>
-        {filtered.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "32px", color: C.text, fontSize: "13px", fontFamily: "'Syne', sans-serif" }}>
-            No results for "{query}"
-          </div>
-        ) : filtered.map((item: any, i: number) => (
-          <div key={item.id ?? i} className="modal-item" style={{
-            padding: "12px 14px", borderRadius: "8px", marginBottom: "6px",
-            background: "#07090f", border: `1px solid ${C.border}`,
-            transition: "all 0.15s ease",
+        {list.map((item: any, i: number) => (
+          <div key={item.id ?? i} className="modal-row" style={{
+            padding: "11px 13px", borderRadius: "8px", marginBottom: "4px",
+            background: C.bg, border: `1px solid ${C.cardBorder}`,
           }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "12px" }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ color: C.white, fontWeight: "600", fontSize: "13px", marginBottom: "3px", fontFamily: "'Syne', sans-serif" }}>
+                <div style={{ color: C.white, fontWeight: "600", fontSize: "13px", marginBottom: "2px", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                   {item.displayName || item.name}
                 </div>
                 {item.description && (
-                  <div style={{
-                    color: C.text, fontSize: "11px", lineHeight: "1.5", marginBottom: "8px",
-                    overflow: "hidden", textOverflow: "ellipsis",
-                    display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as any,
+                  <div style={{ color: C.text, fontSize: "11px", lineHeight: 1.5, marginBottom: "7px",
+                    overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box",
+                    WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as any,
                   }}>
-                    {item.description.replace(/\n\n<!-- .*?-->/gs, "")}
+                    {item.description.replace(/\n\n<!--.*?-->/gs, "")}
                   </div>
                 )}
                 <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
                   {type === "Policies" && (<>
-                    <Tag label={`${item.rules?.length ?? 0} rules`} color={accent} />
+                    <Chip label={`${item.rules?.length ?? 0} rules`} color={accent} />
                     {item.rules?.slice(0, 3).map((r: any, ri: number) => (
-                      <Tag key={ri} label={r.effect} color={r.effect === "ALLOW" ? C.low : C.high} />
+                      <Chip key={ri} label={r.effect} color={r.effect === "ALLOW" ? C.low : C.high} />
                     ))}
                   </>)}
                   {type === "Roles" && (item.policies?.length > 0
-                    ? item.policies.slice(0, 4).map((p: any) => <Tag key={p.id} label={p.displayName || p.name} color={accent} />)
-                    : <Tag label="no policies" color={C.text} />
+                    ? item.policies.slice(0, 4).map((p: any) => <Chip key={p.id} label={p.displayName || p.name} color={accent} />)
+                    : <Chip label="no policies" color={C.text} />
                   )}
                   {type === "Glossaries" && (<>
                     {item.owners?.length > 0
-                      ? item.owners.map((o: any) => <Tag key={o.id} label={`${o.type} · ${o.name}`} color={accent} />)
-                      : <Tag label="no owner" color={C.high} />}
-                    <Tag label={item.description?.includes("certifiedOn") ? "certified" : "uncertified"}
-                      color={item.description?.includes("certifiedOn") ? C.low : C.text} />
+                      ? item.owners.map((o: any) => <Chip key={o.id} label={`${o.type} · ${o.name}`} color={accent} />)
+                      : <Chip label="no owner" color={C.high} />}
+                    <Chip
+                      label={item.description?.includes("certifiedOn") ? "certified" : "uncertified"}
+                      color={item.description?.includes("certifiedOn") ? C.low : C.text}
+                    />
                   </>)}
                 </div>
               </div>
-              <span style={{
-                fontSize: "10px", color: C.text, fontFamily: "'JetBrains Mono', monospace",
-                background: C.card, border: `1px solid ${C.border}`,
-                padding: "2px 6px", borderRadius: "4px", flexShrink: 0,
-              }}>{String(i + 1).padStart(2, "0")}</span>
+              <span style={{ fontSize: "10px", color: "#374151", fontFamily: "'IBM Plex Mono', monospace", flexShrink: 0 }}>
+                {String(i + 1).padStart(2, "0")}
+              </span>
             </div>
           </div>
         ))}
+        {list.length === 0 && (
+          <div style={{ textAlign: "center", padding: "32px", color: C.text, fontSize: "13px" }}>
+            No results for "{q}"
+          </div>
+        )}
       </div>
-
-      <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ color: C.text, fontSize: "11px", fontFamily: "'JetBrains Mono', monospace" }}>
-          {query ? `${filtered.length} / ${data.length}` : `${data.length} total`}
+      <div style={{ marginTop: "10px", paddingTop: "10px", borderTop: `1px solid ${C.cardBorder}`, display: "flex", justifyContent: "space-between" }}>
+        <span style={{ fontSize: "11px", color: C.text, fontFamily: "'IBM Plex Mono', monospace" }}>
+          {q ? `${list.length} / ${data.length}` : `${data.length} total`}
         </span>
-        <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: accent, boxShadow: `0 0 8px ${accent}` }} />
+        <div style={{ width: "5px", height: "5px", borderRadius: "50%", background: accent, marginTop: "3px" }} />
       </div>
     </>
   );
 }
 
-function DetailModal({ type, data, loading, onClose }: { type: ModalType; data: any[]; loading: boolean; onClose: () => void }) {
-  const accentColors: Record<ModalType, string> = { Policies: C.purple, Roles: C.blue, Glossaries: C.low };
-  const accent = accentColors[type];
-
+function Modal({ type, data, loading, onClose }: { type: ModalType; data: any[]; loading: boolean; onClose: () => void }) {
+  const accent = type === "Policies" ? C.purple : type === "Roles" ? C.blue : C.low;
   return (
     <div onClick={onClose} style={{
-      position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)",
-      backdropFilter: "blur(8px)", zIndex: 1000,
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)",
+      backdropFilter: "blur(6px)", zIndex: 1000,
       display: "flex", alignItems: "center", justifyContent: "center",
-      animation: "fadeIn 0.15s ease",
+      animation: "fadeIn 0.12s ease",
     }}>
       <div onClick={e => e.stopPropagation()} style={{
-        background: C.card, border: `1px solid ${C.borderLight}`,
-        borderTop: `2px solid ${accent}`, borderRadius: "16px",
-        padding: "24px", width: "560px", maxHeight: "70vh",
+        background: C.card, border: `1px solid ${C.cardBorder}`,
+        borderRadius: "14px", padding: "22px",
+        width: "540px", maxHeight: "68vh",
         display: "flex", flexDirection: "column",
-        boxShadow: `0 40px 100px rgba(0,0,0,0.8), 0 0 60px ${accent}08`,
-        animation: "slideUp 0.2s cubic-bezier(0.4,0,0.2,1)",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.7)",
+        animation: "slideUp 0.18s cubic-bezier(.4,0,.2,1)",
+        borderTop: `2px solid ${accent}`,
       }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
           <div>
-            <h2 style={{ color: C.white, fontSize: "15px", fontWeight: "700", margin: 0, fontFamily: "'Syne', sans-serif", letterSpacing: "-0.3px" }}>
+            <h3 style={{ margin: 0, color: C.white, fontSize: "15px", fontWeight: "700", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               {type}
-            </h2>
+            </h3>
             {!loading && (
-              <p style={{ color: C.text, fontSize: "11px", margin: "2px 0 0", fontFamily: "'JetBrains Mono', monospace" }}>
+              <p style={{ margin: "2px 0 0", color: C.text, fontSize: "11px", fontFamily: "'IBM Plex Mono', monospace" }}>
                 {data.length} {type.toLowerCase()} in system
               </p>
             )}
           </div>
-          <button className="close-btn" onClick={onClose} style={{
-            background: "none", border: `1px solid ${C.border}`,
-            color: C.text, cursor: "pointer", fontSize: "14px",
-            width: "30px", height: "30px", borderRadius: "6px",
+          <button className="close-x" onClick={onClose} style={{
+            background: "none", border: `1px solid ${C.cardBorder}`,
+            color: C.text, borderRadius: "6px",
+            width: "28px", height: "28px",
             display: "flex", alignItems: "center", justifyContent: "center",
-            transition: "all 0.15s",
+            fontSize: "13px",
           }}>✕</button>
         </div>
-
         {loading ? (
-          <div style={{ textAlign: "center", padding: "48px", color: C.text, fontFamily: "'Syne', sans-serif", fontSize: "13px" }}>
-            <div style={{ fontSize: "24px", marginBottom: "12px", animation: "pulse 1.5s ease infinite" }}>◌</div>
-            Loading {type.toLowerCase()}...
-          </div>
-        ) : data.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "48px", color: C.text, fontFamily: "'Syne', sans-serif", fontSize: "13px" }}>
-            No {type.toLowerCase()} found.
+          <div style={{ textAlign: "center", padding: "48px", color: C.text, fontSize: "13px", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            <div style={{ width: "20px", height: "20px", border: `2px solid ${C.cardBorder}`, borderTopColor: accent, borderRadius: "50%", margin: "0 auto 12px", animation: "spin 0.8s linear infinite" }} />
+            Loading...
           </div>
         ) : (
-          <SearchableList type={type} data={data} accent={accent} />
+          <ModalList type={type} data={data} accent={accent} />
         )}
       </div>
     </div>
@@ -1609,7 +1588,7 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [modal, setModal] = useState<{ type: ModalType | null; data: any[]; loading: boolean }>
     ({ type: null, data: [], loading: false });
-  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+  const [hovered, setHovered] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -1624,23 +1603,18 @@ export default function Dashboard() {
       setFindings(Array.isArray(f.data) ? f.data : []);
       setCerts(Array.isArray(c.data) ? c.data : []);
       setScore(sc.data);
-    }).catch(err => setError(err.message))
-      .finally(() => setLoading(false));
+    }).catch(err => setError(err.message)).finally(() => setLoading(false));
   }, [token]);
 
   const openModal = async (type: ModalType) => {
     setModal({ type, data: [], loading: true });
     try {
       const res = await axios.get(`/api/${type.toLowerCase()}`, {
-        headers: { Authorization: `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' },
+        headers: { Authorization: `Bearer ${token}`, "ngrok-skip-browser-warning": "true" },
       });
       setModal({ type, data: Array.isArray(res.data) ? res.data : [], loading: false });
-    } catch {
-      setModal({ type, data: [], loading: false });
-    }
+    } catch { setModal({ type, data: [], loading: false }); }
   };
-
-  const closeModal = () => setModal({ type: null, data: [], loading: false });
 
   const high = findings.filter(f => f.severity === "HIGH").length;
   const medium = findings.filter(f => f.severity === "MEDIUM").length;
@@ -1660,7 +1634,7 @@ export default function Dashboard() {
     { name: "Teams", value: stats.teams ?? 0, fill: C.high },
   ] : [];
 
-  const certStatusData = [
+  const certData = [
     { name: "Active", value: certs.filter(c => c.status === "ACTIVE").length, color: C.low },
     { name: "Expiring", value: certs.filter(c => c.status === "EXPIRING_SOON").length, color: C.medium },
     { name: "Expired", value: certs.filter(c => c.status === "EXPIRED").length, color: C.high },
@@ -1668,31 +1642,46 @@ export default function Dashboard() {
   ];
 
   const scoreBreakdown = [
-    { name: "Policy Coverage", value: score?.breakdown?.policyCoverage ?? 0, max: 25, color: C.purple },
-    { name: "Ownership Health", value: score?.breakdown?.ownershipHealth ?? 0, max: 25, color: C.blue },
-    { name: "Team Structure", value: score?.breakdown?.teamStructure ?? 0, max: 25, color: C.low },
-    { name: "Certification Rate", value: score?.breakdown?.certificationRate ?? 0, max: 25, color: C.medium },
+    { label: "Policy Coverage", value: score?.breakdown?.policyCoverage ?? 0, color: C.purple },
+    { label: "Ownership Health", value: score?.breakdown?.ownershipHealth ?? 0, color: C.blue },
+    { label: "Team Structure", value: score?.breakdown?.teamStructure ?? 0, color: C.low },
+    { label: "Certification Rate", value: score?.breakdown?.certificationRate ?? 0, color: C.medium },
   ];
 
   const typeData = findings.reduce((acc: any[], f) => {
-    const existing = acc.find(a => a.type === f.type);
-    if (existing) existing.count++;
-    else acc.push({ type: f.type.replace(/_/g, " "), count: 1 });
+    const ex = acc.find(a => a.type === f.type);
+    if (ex) ex.count++; else acc.push({ type: f.type.replace(/_/g, " "), count: 1 });
     return acc;
   }, []);
 
   const CLICKABLE: ModalType[] = ["Policies", "Roles", "Glossaries"];
-  const riskColor = score?.risk === "LOW" ? C.low : score?.risk === "MODERATE" ? C.medium : C.high;
+  const F = "'Plus Jakarta Sans', sans-serif";
+  const M = "'IBM Plex Mono', monospace";
+
+  const card = (extra?: object) => ({
+    background: C.card,
+    border: `1px solid ${C.cardBorder}`,
+    borderRadius: "12px",
+    padding: "20px",
+    ...(extra || {}),
+  });
+
+  const sectionLabel = (label: string, color?: string) => (
+    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
+      <div style={{ width: "2px", height: "12px", borderRadius: "1px", background: color || C.accent, flexShrink: 0 }} />
+      <span style={{ fontSize: "11px", fontWeight: "600", color: C.textMid, letterSpacing: "1px", textTransform: "uppercase" as any, fontFamily: F }}>
+        {label}
+      </span>
+    </div>
+  );
 
   if (loading) return (
     <>
       <GlobalStyles />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: "32px", marginBottom: "16px", animation: "pulse 1.5s ease infinite" }}>◌</div>
-          <div style={{ color: C.text, fontSize: "13px", fontFamily: "'Syne', sans-serif", letterSpacing: "0.5px" }}>
-            Loading governance data...
-          </div>
+          <div style={{ width: "24px", height: "24px", border: `2px solid ${C.cardBorder}`, borderTopColor: C.accent, borderRadius: "50%", margin: "0 auto 14px", animation: "spin 0.8s linear infinite" }} />
+          <div style={{ color: C.text, fontSize: "13px", fontFamily: F }}>Loading governance data...</div>
         </div>
       </div>
     </>
@@ -1703,17 +1692,11 @@ export default function Dashboard() {
       <GlobalStyles />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: "32px", marginBottom: "16px" }}>—</div>
-          <div style={{ color: C.high, fontSize: "14px", marginBottom: "6px", fontFamily: "'Syne', sans-serif" }}>
-            Failed to load
-          </div>
-          <div style={{ color: C.text, fontSize: "12px", marginBottom: "24px", fontFamily: "'JetBrains Mono', monospace" }}>
-            {error}
-          </div>
-          <button onClick={() => window.location.reload()} className="nav-btn" style={{
-            padding: "10px 24px", background: C.accent,
-            border: "none", borderRadius: "8px", color: "white",
-            cursor: "pointer", fontSize: "13px", fontFamily: "'Syne', sans-serif", fontWeight: "600",
+          <div style={{ color: C.high, fontSize: "14px", marginBottom: "6px", fontFamily: F, fontWeight: "600" }}>Failed to load</div>
+          <div style={{ color: C.text, fontSize: "12px", marginBottom: "20px", fontFamily: M }}>{error}</div>
+          <button onClick={() => window.location.reload()} className="pill-btn" style={{
+            padding: "9px 20px", background: C.accent, border: "none",
+            borderRadius: "8px", color: "#fff", fontSize: "13px", fontWeight: "600", fontFamily: F,
           }}>Retry</button>
         </div>
       </div>
@@ -1723,284 +1706,234 @@ export default function Dashboard() {
   return (
     <>
       <GlobalStyles />
-      <div style={{ maxWidth: "1200px", fontFamily: "'Syne', sans-serif" }}>
+      <div style={{ maxWidth: "1200px", fontFamily: F }}>
 
-        {/* ── Header ── */}
-        <div style={{
-          marginBottom: "32px", display: "flex",
-          justifyContent: "space-between", alignItems: "flex-start",
-          animation: "fadeUp 0.3s ease",
-        }}>
+        {/* Header */}
+        <div className="anim-1" style={{ marginBottom: "28px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
-              <div style={{
-                width: "6px", height: "24px", borderRadius: "3px",
-                background: `linear-gradient(180deg, ${C.accent}, ${C.purple})`,
-              }} />
-              <h1 style={{ fontSize: "22px", fontWeight: "800", color: C.white, letterSpacing: "-0.5px", margin: 0 }}>
-                Governance Overview
-              </h1>
-            </div>
-            <p style={{ color: C.text, fontSize: "12px", margin: 0, fontFamily: "'JetBrains Mono', monospace", paddingLeft: "16px" }}>
+            <h1 style={{ fontSize: "20px", fontWeight: "700", color: C.white, margin: "0 0 4px", letterSpacing: "-0.3px" }}>
+              Governance Overview
+            </h1>
+            <p style={{ color: C.text, fontSize: "12px", margin: 0, fontFamily: M }}>
               {email} · {new Date().toLocaleDateString("en-AU", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
             </p>
           </div>
-          <div style={{ display: "flex", gap: "8px" }}>
+          <div style={{ display: "flex", gap: "6px" }}>
             {[
               { label: "Audit", path: "/audit", color: C.purple },
               { label: "Delegate", path: "/delegate", color: C.blue },
               { label: "Certify", path: "/certify", color: C.medium },
             ].map(a => (
-              <button key={a.path} onClick={() => navigate(a.path)} className="nav-btn" style={{
-                padding: "8px 16px",
+              <button key={a.path} onClick={() => navigate(a.path)} className="pill-btn" style={{
+                padding: "7px 14px",
                 background: `${a.color}12`,
-                border: `1px solid ${a.color}30`,
-                borderRadius: "8px", color: a.color,
-                cursor: "pointer", fontSize: "12px", fontWeight: "600",
-                fontFamily: "'Syne', sans-serif", letterSpacing: "0.3px",
+                border: `1px solid ${a.color}28`,
+                borderRadius: "7px", color: a.color,
+                fontSize: "12px", fontWeight: "600", fontFamily: F,
               }}>{a.label}</button>
             ))}
           </div>
         </div>
 
-        {/* ── Row 1: Score + Stats ── */}
-        <div className="dash-row" style={{ display: "grid", gridTemplateColumns: "260px 1fr", gap: "16px", marginBottom: "16px" }}>
+        {/* Row 1: Score + Stat Cards */}
+        <div className="anim-2" style={{ display: "grid", gridTemplateColumns: "248px 1fr", gap: "14px", marginBottom: "14px" }}>
 
-          {/* Score Card */}
-          <div style={{
-            background: C.card, border: `1px solid ${riskColor}20`,
-            borderRadius: "16px", padding: "24px",
-            boxShadow: `0 0 40px ${riskColor}08`,
-            display: "flex", flexDirection: "column", alignItems: "center",
-          }}>
-            <div style={{ fontSize: "10px", color: C.text, marginBottom: "14px", fontWeight: "600", letterSpacing: "2px", textTransform: "uppercase" }}>
-              Governance Score
-            </div>
-            {score && <RiskGauge score={score.total} risk={score.risk} />}
-            <div style={{ marginTop: "20px", width: "100%" }}>
+          {/* Score */}
+          <div style={{ ...card(), display: "flex", flexDirection: "column", alignItems: "center" }}>
+            {sectionLabel("Governance Score", score?.risk === "LOW" ? C.low : score?.risk === "MODERATE" ? C.medium : C.high)}
+            {score && <Gauge score={score.total} risk={score.risk} />}
+            <div style={{ marginTop: "18px", width: "100%" }}>
               {scoreBreakdown.map(item => (
-                <ScoreBar key={item.name} value={item.value} max={item.max} color={item.color} label={item.name} />
+                <div key={item.label} style={{ marginBottom: "10px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                    <span style={{ fontSize: "11px", color: C.textMid }}>{item.label}</span>
+                    <span style={{ fontSize: "10px", color: item.color, fontFamily: M, fontWeight: "500" }}>{item.value}/25</span>
+                  </div>
+                  <Bar2 value={item.value} max={25} color={item.color} />
+                </div>
               ))}
             </div>
           </div>
 
           {/* Stat Cards */}
-          <div className="dash-row" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
             {[
               { label: "Policies", value: stats?.policies ?? 0, color: C.purple, sub: "governance rules" },
               { label: "Roles", value: stats?.roles ?? 0, color: C.blue, sub: "access roles" },
               { label: "Glossaries", value: stats?.glossaries ?? 0, color: C.low, sub: "data glossaries" },
               { label: "Users", value: stats?.users ?? 0, color: C.medium, sub: "active users" },
               { label: "Teams", value: stats?.teams ?? 0, color: C.high, sub: "team groups" },
-              {
-                label: "Issues", value: high + medium + low,
-                color: high > 0 ? C.high : C.low,
-                sub: `${high} critical`,
-              },
-            ].map(card => {
-              const isClickable = CLICKABLE.includes(card.label as ModalType);
-              const isHovered = hoveredCard === card.label;
+              { label: "Issues", value: high + medium + low, color: high > 0 ? C.high : C.low, sub: `${high} critical` },
+            ].map(card2 => {
+              const isClick = CLICKABLE.includes(card2.label as ModalType);
+              const isHov = hovered === card2.label;
               return (
-                <div key={card.label} className="stat-card"
-                  onClick={() => isClickable && openModal(card.label as ModalType)}
-                  onMouseEnter={() => isClickable && setHoveredCard(card.label)}
-                  onMouseLeave={() => setHoveredCard(null)}
+                <div key={card2.label} className="stat-card"
+                  onClick={() => isClick && openModal(card2.label as ModalType)}
+                  onMouseEnter={() => isClick && setHovered(card2.label)}
+                  onMouseLeave={() => setHovered(null)}
                   style={{
-                    background: isHovered ? "#111827" : C.card,
-                    border: `1px solid ${isHovered ? card.color + "40" : C.border}`,
-                    borderRadius: "12px", padding: "18px",
-                    cursor: isClickable ? "pointer" : "default",
-                    boxShadow: isHovered ? `0 8px 32px ${card.color}15` : "none",
+                    background: C.card,
+                    border: `1px solid ${isHov ? card2.color + "35" : C.cardBorder}`,
+                    borderRadius: "12px", padding: "18px 16px",
+                    cursor: isClick ? "pointer" : "default",
                     position: "relative", overflow: "hidden",
+                    boxShadow: isHov ? `0 4px 20px ${card2.color}12` : "none",
                   }}>
-                  {/* Accent line */}
                   <div style={{
-                    position: "absolute", top: 0, left: 0, right: 0,
-                    height: "2px", background: card.color,
-                    opacity: isHovered ? 1 : 0.4,
-                    transition: "opacity 0.2s",
+                    position: "absolute", bottom: 0, left: 0, right: 0, height: "2px",
+                    background: card2.color, opacity: isHov ? 0.6 : 0.2,
+                    transition: "opacity 0.15s",
                   }} />
-                  {isClickable && (
+                  {isClick && (
                     <div style={{
                       position: "absolute", top: "10px", right: "10px",
-                      fontSize: "9px", color: card.color,
-                      opacity: isHovered ? 1 : 0, transition: "opacity 0.2s",
-                      fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.5px",
+                      opacity: isHov ? 1 : 0, transition: "opacity 0.15s",
+                      fontSize: "9px", color: card2.color, fontFamily: M, letterSpacing: "0.5px",
                     }}>VIEW ↗</div>
                   )}
-                  <div style={{ fontSize: "28px", fontWeight: "800", color: card.color, fontFamily: "'JetBrains Mono', monospace", lineHeight: 1 }}>
-                    <AnimatedNumber target={card.value} />
+                  <div style={{ fontSize: "30px", fontWeight: "700", color: card2.color, fontFamily: M, lineHeight: 1, marginBottom: "6px" }}>
+                    <AnimatedNumber target={card2.value} />
                   </div>
-                  <div style={{ fontSize: "13px", color: C.bright, marginTop: "6px", fontWeight: "600" }}>{card.label}</div>
-                  <div style={{ fontSize: "10px", color: C.text, marginTop: "2px", fontFamily: "'JetBrains Mono', monospace" }}>{card.sub}</div>
+                  <div style={{ fontSize: "13px", color: C.bright, fontWeight: "600", marginBottom: "2px" }}>{card2.label}</div>
+                  <div style={{ fontSize: "10px", color: C.text, fontFamily: M }}>{card2.sub}</div>
                 </div>
               );
             })}
           </div>
         </div>
 
-        {/* ── Row 2: Findings + Certs ── */}
-        <div className="dash-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+        {/* Row 2: Findings + Certs */}
+        <div className="anim-3" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "14px" }}>
 
-          {/* Findings */}
-          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: "14px", padding: "22px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "20px" }}>
-              <div style={{ width: "3px", height: "14px", borderRadius: "2px", background: C.high }} />
-              <h2 style={{ fontSize: "12px", fontWeight: "700", color: C.textMid, margin: 0, letterSpacing: "1.5px", textTransform: "uppercase" }}>
-                Findings by Severity
-              </h2>
-            </div>
+          <div style={card()}>
+            {sectionLabel("Findings by Severity", C.high)}
             {pieData.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "28px", color: C.low }}>
-                <div style={{ fontSize: "32px", marginBottom: "8px" }}>✓</div>
-                <div style={{ fontSize: "13px" }}>No findings. Governance is healthy.</div>
+              <div style={{ textAlign: "center", padding: "24px", color: C.low }}>
+                <div style={{ fontSize: "22px", marginBottom: "6px" }}>✓</div>
+                <div style={{ fontSize: "12px" }}>No findings. Governance is healthy.</div>
               </div>
             ) : (
-              <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-                <ResponsiveContainer width={130} height={130}>
+              <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                <ResponsiveContainer width={120} height={120}>
                   <PieChart>
-                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={36} outerRadius={60} dataKey="value" paddingAngle={3}>
-                      {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={32} outerRadius={55} dataKey="value" paddingAngle={3}>
+                      {pieData.map((e, i) => <Cell key={i} fill={e.color} />)}
                     </Pie>
                   </PieChart>
                 </ResponsiveContainer>
                 <div style={{ flex: 1 }}>
-                  {[
-                    { label: "Critical", value: high, color: C.high },
-                    { label: "Medium", value: medium, color: C.medium },
-                    { label: "Low", value: low, color: C.low },
-                  ].map(item => (
+                  {[{ label: "Critical", value: high, color: C.high }, { label: "Medium", value: medium, color: C.medium }, { label: "Low", value: low, color: C.low }].map(item => (
                     <div key={item.label} style={{
                       display: "flex", justifyContent: "space-between", alignItems: "center",
-                      marginBottom: "8px", padding: "7px 10px", borderRadius: "6px",
-                      background: `${item.color}08`, border: `1px solid ${item.color}15`,
+                      padding: "6px 10px", borderRadius: "6px", marginBottom: "5px",
+                      background: `${item.color}08`, border: `1px solid ${item.color}14`,
                     }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
-                        <div style={{ width: "5px", height: "5px", borderRadius: "50%", background: item.color }} />
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <div style={{ width: "4px", height: "4px", borderRadius: "50%", background: item.color }} />
                         <span style={{ fontSize: "11px", color: C.textMid }}>{item.label}</span>
                       </div>
-                      <span style={{ fontSize: "16px", fontWeight: "700", color: item.color, fontFamily: "'JetBrains Mono', monospace" }}>{item.value}</span>
+                      <span style={{ fontSize: "15px", fontWeight: "700", color: item.color, fontFamily: M }}>{item.value}</span>
                     </div>
                   ))}
-                  <button onClick={() => navigate("/audit")} className="action-btn" style={{
+                  <button onClick={() => navigate("/audit")} className="action-link" style={{
                     width: "100%", marginTop: "6px", padding: "7px",
-                    background: `${C.accent}10`, border: `1px solid ${C.accent}25`,
-                    borderRadius: "6px", color: C.purple, cursor: "pointer",
-                    fontSize: "11px", fontWeight: "600", fontFamily: "'Syne', sans-serif",
-                  }}>View All Findings →</button>
+                    background: "transparent", border: `1px solid ${C.cardBorder}`,
+                    borderRadius: "6px", color: C.textMid, fontSize: "11px", fontWeight: "600",
+                    fontFamily: F, display: "block",
+                  }}>View all findings →</button>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Cert Status */}
-          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: "14px", padding: "22px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "20px" }}>
-              <div style={{ width: "3px", height: "14px", borderRadius: "2px", background: C.medium }} />
-              <h2 style={{ fontSize: "12px", fontWeight: "700", color: C.textMid, margin: 0, letterSpacing: "1.5px", textTransform: "uppercase" }}>
-                Certification Status
-              </h2>
-            </div>
-            <ResponsiveContainer width="100%" height={140}>
-              <BarChart data={certStatusData} barSize={24}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#0d1117" vertical={false} />
-                <XAxis dataKey="name" tick={{ fill: C.text, fontSize: 10, fontFamily: "'Syne', sans-serif" }} axisLine={false} tickLine={false} />
+          <div style={card()}>
+            {sectionLabel("Certification Status", C.medium)}
+            <ResponsiveContainer width="100%" height={130}>
+              <BarChart data={certData} barSize={22}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#111318" vertical={false} />
+                <XAxis dataKey="name" tick={{ fill: C.text, fontSize: 10, fontFamily: F }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: C.text, fontSize: 10 }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ background: "#0d1117", border: `1px solid ${C.border}`, borderRadius: "8px", color: C.bright, fontSize: "11px", fontFamily: "'Syne', sans-serif" }} />
+                <Tooltip contentStyle={{ background: C.card, border: `1px solid ${C.cardBorder}`, borderRadius: "8px", color: C.bright, fontSize: "11px", fontFamily: F }} />
                 <Bar dataKey="value" radius={[3, 3, 0, 0]}>
-                  {certStatusData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                  {certData.map((e, i) => <Cell key={i} fill={e.color} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-            <button onClick={() => navigate("/certify")} className="action-btn" style={{
+            <button onClick={() => navigate("/certify")} className="action-link" style={{
               width: "100%", marginTop: "10px", padding: "7px",
-              background: `${C.medium}10`, border: `1px solid ${C.medium}25`,
-              borderRadius: "6px", color: C.medium, cursor: "pointer",
-              fontSize: "11px", fontWeight: "600", fontFamily: "'Syne', sans-serif",
-            }}>Manage Certifications →</button>
+              background: "transparent", border: `1px solid ${C.cardBorder}`,
+              borderRadius: "6px", color: C.textMid, fontSize: "11px", fontWeight: "600",
+              fontFamily: F, display: "block",
+            }}>Manage certifications →</button>
           </div>
         </div>
 
-        {/* ── Row 3: Asset Breakdown + Finding Types ── */}
-        <div className="dash-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+        {/* Row 3: Asset Breakdown + Finding Types */}
+        <div className="anim-4" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
 
-          {/* Asset Breakdown */}
-          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: "14px", padding: "22px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "20px" }}>
-              <div style={{ width: "3px", height: "14px", borderRadius: "2px", background: C.blue }} />
-              <h2 style={{ fontSize: "12px", fontWeight: "700", color: C.textMid, margin: 0, letterSpacing: "1.5px", textTransform: "uppercase" }}>
-                Asset Breakdown
-              </h2>
-            </div>
-            <ResponsiveContainer width="100%" height={150}>
-              <BarChart data={barData} layout="vertical" barSize={12}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#0d1117" horizontal={false} />
+          <div style={card()}>
+            {sectionLabel("Asset Breakdown", C.blue)}
+            <ResponsiveContainer width="100%" height={148}>
+              <BarChart data={barData} layout="vertical" barSize={11}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#111318" horizontal={false} />
                 <XAxis type="number" tick={{ fill: C.text, fontSize: 10 }} axisLine={false} tickLine={false} />
-                <YAxis type="category" dataKey="name" tick={{ fill: C.textMid, fontSize: 11, fontFamily: "'Syne', sans-serif" }} axisLine={false} tickLine={false} width={68} />
-                <Tooltip contentStyle={{ background: "#0d1117", border: `1px solid ${C.border}`, borderRadius: "8px", color: C.bright, fontSize: "11px" }} />
+                <YAxis type="category" dataKey="name" tick={{ fill: C.textMid, fontSize: 11, fontFamily: F }} axisLine={false} tickLine={false} width={65} />
+                <Tooltip contentStyle={{ background: C.card, border: `1px solid ${C.cardBorder}`, borderRadius: "8px", color: C.bright, fontSize: "11px", fontFamily: F }} />
                 <Bar dataKey="value" radius={[0, 3, 3, 0]}>
-                  {barData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+                  {barData.map((e, i) => <Cell key={i} fill={e.fill} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          {/* Finding Types + Quick Actions */}
-          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: "14px", padding: "22px", display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "20px" }}>
-              <div style={{ width: "3px", height: "14px", borderRadius: "2px", background: C.high }} />
-              <h2 style={{ fontSize: "12px", fontWeight: "700", color: C.textMid, margin: 0, letterSpacing: "1.5px", textTransform: "uppercase" }}>
-                Finding Types
-              </h2>
-            </div>
+          <div style={{ ...card(), display: "flex", flexDirection: "column" }}>
+            {sectionLabel("Finding Types", C.high)}
             {typeData.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "20px", color: C.low, flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                <div style={{ fontSize: "28px", marginBottom: "8px" }}>✓</div>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: C.low, padding: "16px" }}>
+                <div style={{ fontSize: "20px", marginBottom: "6px" }}>✓</div>
                 <div style={{ fontSize: "12px" }}>No issues detected</div>
               </div>
             ) : (
-              <div style={{ flex: 1, marginBottom: "14px" }}>
+              <div style={{ flex: 1, marginBottom: "12px" }}>
                 {typeData.map((t, i) => (
                   <div key={i} style={{
                     display: "flex", justifyContent: "space-between", alignItems: "center",
-                    padding: "7px 0",
-                    borderBottom: i < typeData.length - 1 ? `1px solid ${C.border}` : "none",
+                    padding: "6px 0",
+                    borderBottom: i < typeData.length - 1 ? `1px solid ${C.cardBorder}` : "none",
                   }}>
-                    <span style={{ fontSize: "11px", color: C.text, fontFamily: "'JetBrains Mono', monospace" }}>
-                      {t.type.toLowerCase()}
-                    </span>
+                    <span style={{ fontSize: "11px", color: C.text, fontFamily: M }}>{t.type.toLowerCase()}</span>
                     <span style={{
-                      padding: "2px 8px", borderRadius: "4px",
+                      padding: "1px 8px", borderRadius: "3px",
                       background: `${C.high}10`, color: C.high,
-                      fontSize: "10px", fontWeight: "700", fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: "10px", fontWeight: "600", fontFamily: M,
                     }}>{t.count}</span>
                   </div>
                 ))}
               </div>
             )}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "7px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
               {[
                 { label: "Pre-Delegate", path: "/pre-delegate", color: C.purple },
                 { label: "Delegate", path: "/delegate", color: C.blue },
                 { label: "Audit", path: "/audit", color: C.high },
                 { label: "Certify", path: "/certify", color: C.medium },
               ].map(a => (
-                <button key={a.path} onClick={() => navigate(a.path)} className="action-btn" style={{
-                  padding: "8px",
+                <button key={a.path} onClick={() => navigate(a.path)} className="pill-btn" style={{
+                  padding: "7px 8px",
                   background: `${a.color}10`,
-                  border: `1px solid ${a.color}25`,
+                  border: `1px solid ${a.color}22`,
                   borderRadius: "6px", color: a.color,
-                  cursor: "pointer", fontSize: "11px", fontWeight: "600",
-                  fontFamily: "'Syne', sans-serif",
+                  fontSize: "11px", fontWeight: "600", fontFamily: F,
                 }}>{a.label}</button>
               ))}
             </div>
           </div>
         </div>
 
-        {/* ── Modal ── */}
+        {/* Modal */}
         {modal.type && (
-          <DetailModal type={modal.type} data={modal.data} loading={modal.loading} onClose={closeModal} />
+          <Modal type={modal.type} data={modal.data} loading={modal.loading} onClose={() => setModal({ type: null, data: [], loading: false })} />
         )}
       </div>
     </>
