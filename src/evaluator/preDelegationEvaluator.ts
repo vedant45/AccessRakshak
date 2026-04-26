@@ -47,7 +47,7 @@ export function evaluatePreDelegation(
               type: "team",
             },
             description: `Owner ${owner.name} is deleted. Pre-delegating to ${defaultTeam.name}.`,
-            comments: `Auto pre-delegated by PolicyGuard — deleted user detected. SailPoint IIQ pattern applied.`,
+            comments: ``,
             status: "PENDING",
           });
         }

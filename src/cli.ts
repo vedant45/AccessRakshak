@@ -316,7 +316,7 @@ program
   .option("--dry-run", "Preview changes without applying them", false)
   .action(async (options) => {
     console.log("\n🔐 PolicyGuard - Pre-Delegation Engine\n");
-    console.log("   Inspired by SailPoint IIQ pre-delegation patterns\n");
+    
 
     if (options.dryRun) {
       console.log("🔍 DRY RUN MODE — no changes will be made\n");
