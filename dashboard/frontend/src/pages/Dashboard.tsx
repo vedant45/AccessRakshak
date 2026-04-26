@@ -941,12 +941,12 @@ export default function Dashboard() {
     { name: "Uncertified", value: certs.filter(c => c.status === "UNCERTIFIED").length, color: C.text },
   ];
 
-  const scoreBreakdown = score ? [
-    { name: "Policy Coverage", value: score.breakdown.policyCoverage, max: 25, color: C.purple },
-    { name: "Ownership Health", value: score.breakdown.ownershipHealth, max: 25, color: C.blue },
-    { name: "Team Structure", value: score.breakdown.teamStructure, max: 25, color: C.low },
-    { name: "Certification Rate", value: score.breakdown.certificationRate, max: 25, color: C.medium },
-  ] : [];
+    const scoreBreakdown = [
+    { name: "Policy Coverage", value: score?.breakdown?.policyCoverage ?? 0, max: 25, color: C.purple },
+    { name: "Ownership Health", value: score?.breakdown?.ownershipHealth ?? 0, max: 25, color: C.blue },
+    { name: "Team Structure", value: score?.breakdown?.teamStructure ?? 0, max: 25, color: C.low },
+    { name: "Certification Rate", value: score?.breakdown?.certificationRate ?? 0, max: 25, color: C.medium },
+  ];
 
   const typeData = findings.reduce((acc: any[], f) => {
     const existing = acc.find(a => a.type === f.type);
