@@ -1,8 +1,7 @@
-# 🛡️ AccessRakshak
+# 🛡️ Sentari
+> Governance Intelligence Platform for OpenMetadata
 
-> Enterprise-grade governance auditor for OpenMetadata 
-
-AccessRakshak brings IAM governance concepts (SOD policies, access certifications, ownership delegation) to data asset management in OpenMetadata.
+Sentari brings IAM governance concepts (SOD policies, access certifications, ownership delegation) to data asset management in OpenMetadata.
 
 ## 🎯 Problem
 
@@ -27,22 +26,6 @@ npm run delegate
 npm run certify
 ```
 
-## 📊 Demo
-
-```
-🔍 AccessRakshak - OpenMetadata Governance Auditor
-
-🔴 [HIGH] Glossary: FinanceGlossary
-   ❗ Issue: Glossary is only owned by admin. Single point of failure.
-   ✅ Fix:   Assign a specific team as owner instead of admin.
-
-Policies scanned:       15
-Roles scanned:          15
-Glossaries scanned:     2
-Users scanned:          1
-Teams scanned:          2
-```
-
 ## 🔄 Full Governance Lifecycle
 
 ```
@@ -52,64 +35,108 @@ npm run audit       →  Verify fixes
 npm run certify     →  Certify ownership is valid
 ```
 
-## ⚙️ Setup
+## ⚙️ Installation
 
 ### Prerequisites
-- Node.js 18+
-- OpenMetadata instance (local or cloud)
 
-### Installation
+- [Node.js](https://nodejs.org/) v18+
+- [Docker & Docker Compose](https://docs.docker.com/get-docker/)
+- A running OpenMetadata instance (local or cloud)
+- [ngrok](https://ngrok.com/download) — if tunneling a local backend
+- [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/) — optional, for a stable public URL
+
+---
+
+### Step 1 — Clone the Repository
 
 ```bash
-git clone https://github.com/vedant45/policy-guard
-cd policy-guard
+git clone https://github.com/vedant45/sentari
+cd sentari
 npm install
 ```
 
-### Configuration
+---
 
-Create a `.env` file:
-```env
-OPENMETADATA_URL=http://localhost:8585
-OPENMETADATA_USER=admin@open-metadata.org
-OPENMETADATA_PASSWORD=admin
-```
+### Step 2 — Start OpenMetadata via Docker
 
-### Run
+If you don't have an OpenMetadata instance running yet:
 
 ```bash
-npm run audit
+docker compose up -d
 ```
 
-## 🏗️ Architecture
+Wait for it to be healthy at `http://localhost:8585`.  
+Default credentials: `admin / admin`
 
-```
-src/
-├── cli.ts                          # CLI entry point (audit, delegate, certify)
-├── api/
-│   └── openmetadata.ts             # OpenMetadata REST API client
-└── evaluator/
-    ├── policyEvaluator.ts          # Governance policy checks
-    ├── certificationEvaluator.ts   # Access certification logic
-    └── delegationEvaluator.ts      # Ownership delegation rules
+---
+
+### Step 3 — Configure Environment Variables
+Use the env file given
 ```
 
-## 🔍 What It Detects
+> ⚠️ If using Cloudflare Tunnel, replace `OPENMETADATA_URL` with your tunnel URL:
+> ```env
+> OPENMETADATA_URL=https://your-tunnel.trycloudflare.com
+> ```
 
-| Check | Severity | Description |
-|---|---|---|
-| `DENY_POLICY_SCOPE_MISMATCH` | 🔴 HIGH | isOwner() DENY rules that don't apply to child resources |
-| `ADMIN_ONLY_OWNER` | 🔴 HIGH | Assets owned only by admin — governance risk |
-| `NO_OWNER` | 🔴 HIGH | Assets with no owner — policies will never match |
-| `NO_TEAM_OWNER` | 🟡 MEDIUM | Assets owned by individuals, not teams |
-| `EMPTY_POLICY` | 🟢 LOW | Policies with no rules defined |
+---
+### Step 4 — Run the Backend
 
-## 💡 Inspiration
+```bash
+npm run backend
+```
 
-Built on enterprise IAM patterns from SailPoint IIQ:
-- **SOD Policies** → policy conflict detection
-- **Access Certifications** → periodic ownership review
-- **Role Mining** → delegation rule engine
+To expose it publicly via ngrok:
+
+```bash
+ngrok http 8080
+```
+
+Copy the forwarding URL and update your `vercel.json`:
+
+```json
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://your-ngrok-url.ngrok-free.app/api/:path*"
+    },
+    {
+      "source": "/ws",
+      "destination": "https://your-ngrok-url.ngrok-free.app/ws"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "ngrok-skip-browser-warning",
+          "value": "true"
+        }
+      ]
+    }
+  ]
+}
+```
+
+> ⚠️ Replace `your-ngrok-url.ngrok-free.app` with your actual ngrok forwarding URL each time you restart ngrok.
+
+### Step 5 — Run Sentari
+
+```Login https://sentari.vercel.app/
+```
+
+---
+
+
+
+---
+
 
 ## 🏆 Built For
 
