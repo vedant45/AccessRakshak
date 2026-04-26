@@ -5,12 +5,12 @@
       "destination": "https://chump-kangaroo-blast.ngrok-free.dev/api/:path*"
     },
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    },
-    {
       "source": "/ws",
       "destination": "https://chump-kangaroo-blast.ngrok-free.dev/ws"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
   "headers": [
